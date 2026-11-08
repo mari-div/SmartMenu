@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block titulo %}Carta · Mesa {{ mesa.numero }} · SmartMenu{% endblock %}
+{% block clase_body %}pagina-carta{% endblock %}
+{% block clase_main %}ancho{% endblock %}
+{% block contenido %}
+<div class="carta-cab">
+  <div>
+    <p class="eyebrow"><svg class="ico"><use href="#i-table"/></svg> Mesa {{ mesa.numero }}</p>
+    <h1>Nuestra carta</h1>
+  </div>
+</div>
+
+<div class="carta-layout">
+  <section aria-label="Carta">
+    <div class="filtros" role="group" aria-label="Filtrar por dieta">
+      <span class="filtros-titulo"><svg class="ico"><use href="#i-leaf"/></svg> Dieta</span>
+      {% for clave, nombre in filtros.items() %}
+      <button type="button" class="chip" data-dieta="{{ clave }}" aria-pressed="{{ 'true' if clave in dietas_activas else 'false' }}">{{ nombre }}</button>
+      {% endfor %}
+    </div>
+
+    <div id="menu" data-url="{{ url_for('cliente.carta', token=mesa.token) }}">
+      {% include "_secciones.html" %}
+    </div>
+  </section>
+
+  <aside class="carrito" id="carrito" data-mesa-token="{{ mesa.token }}" aria-label="Tu pedido">
+    <div class="carrito-cab">
+      <h2><svg class="ico"><use href="#i-receipt"/></svg> Tu pedido</h2>
+      <button type="button" class="icon-btn solo-movil" id="cerrar-carrito" aria-label="Cerrar pedido"><svg class="ico"><use href="#i-x"/></svg></button>
+    </div>
+
+    <div class="carrito-vacio" id="carrito-vacio">
+      <svg class="ico"><use href="#i-bag"/></svg>
+      <p>Tu pedido está vacío.<br><span class="muted">Agrega platos de la carta.</span></p>
+    </div>
+    <ul id="lista-carrito" class="lista-carrito"></ul>
+
+    <div class="totales" id="totales" hidden>
+      <div class="fila"><span>Subtotal</span><span id="t-subtotal">$0.00</span></div>
+      <div class="fila desc" id="fila-desc">
+        <span><svg class="ico"><use href="#i-tag"/></svg><span id="t-regla">Descuento</span></span>
+        <span id="t-descuento">-$0.00</span>
+      </div>
+      <div class="fila total"><span>Total</span><span id="t-total">$0.00</span></div>
+    </div>
+
+    <div class="campo">
+      <label for="comensales">Comensales</label>
+      <div class="campo-num">
+        <button type="button" id="com-menos" aria-label="Menos comensales"><svg class="ico"><use href="#i-minus"/></svg></button>
+        <input type="number" id="comensales" min="1" max="30" value="1" inputmode="numeric">
+        <button type="button" id="com-mas" aria-label="Más comensales"><svg class="ico"><use href="#i-plus"/></svg></button>
+      </div>
+    </div>
+    <div class="campo">
+      <label for="notas">Notas para la cocina</label>
+      <textarea id="notas" maxlength="255" rows="2" placeholder="Ej.: sin cebolla, bien cocido…"></textarea>
+    </div>
+    <p class="error" id="error" role="alert" hidden></p>
+    <button class="btn btn-primary btn-block btn-lg" id="enviar" type="button" disabled>
+      <span class="btn-texto">Enviar a cocina</span>
+      <span class="spinner" aria-hidden="true"></span>
+    </button>
+  </aside>
+</div>
+
+<button type="button" class="barra-carrito" id="barra-carrito" hidden aria-controls="carrito" aria-expanded="false">
+  <span class="barra-carrito-n"><svg class="ico"><use href="#i-bag"/></svg><b id="bc-n">0</b></span>
+  <span class="barra-carrito-t">Ver pedido</span>
+  <span class="barra-carrito-p" id="bc-total">$0.00</span>
+</button>
+<div class="velo" id="velo" hidden></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/carta.js') }}"></script>{% endblock %}

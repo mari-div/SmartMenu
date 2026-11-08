@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titulo %}Pedido #{{ pedido.id }} · SmartMenu{% endblock %}
+{% block contenido %}
+<div class="seguimiento" id="seguimiento" data-id="{{ pedido.id }}" data-estado="{{ pedido.estado }}">
+  <p class="eyebrow"><svg class="ico"><use href="#i-table"/></svg> Mesa {{ pedido.mesa.numero }} · Pedido #{{ pedido.id }}</p>
+
+  <div class="estado-card">
+    <div class="anillo" id="anillo" aria-hidden="true">
+      <svg viewBox="0 0 120 120">
+        <circle class="anillo-fondo" cx="60" cy="60" r="52"/>
+        <circle class="anillo-prog" id="anillo-prog" cx="60" cy="60" r="52" pathLength="100"/>
+      </svg>
+      <div class="anillo-centro">
+        <svg class="ico anillo-ico" id="anillo-ico"><use href="#i-bell"/></svg>
+        <strong id="eta-num">–</strong>
+        <span id="eta-unidad">min</span>
+      </div>
+    </div>
+    <div class="estado-texto">
+      <h1 id="estado-titulo" aria-live="polite">Recibimos tu pedido</h1>
+      <p id="estado-sub" class="muted">Un momento…</p>
+      <p class="actualizado"><span class="punto-vivo" aria-hidden="true"></span> <span id="actualizado">Conectando…</span></p>
+    </div>
+  </div>
+
+  <ol class="pasos" id="pasos" aria-label="Progreso del pedido">
+    <li data-estado="pendiente"><span class="paso-ico"><svg class="ico"><use href="#i-bell"/></svg></span><span class="paso-txt">Recibido</span></li>
+    <li data-estado="en_preparacion"><span class="paso-ico"><svg class="ico"><use href="#i-chef"/></svg></span><span class="paso-txt">Cocinando</span></li>
+    <li data-estado="listo"><span class="paso-ico"><svg class="ico"><use href="#i-check"/></svg></span><span class="paso-txt">Listo</span></li>
+    <li data-estado="entregado"><span class="paso-ico"><svg class="ico"><use href="#i-utensils"/></svg></span><span class="paso-txt">En tu mesa</span></li>
+  </ol>
+
+  <section class="recibo" aria-labelledby="h-detalle">
+    <h2 id="h-detalle"><svg class="ico"><use href="#i-receipt"/></svg> Detalle del pedido</h2>
+    <ul class="detalle" id="detalle"></ul>
+    <div class="recibo-totales">
+      <div class="fila" id="r-fila-desc" hidden><span>Descuento</span><span id="r-descuento"></span></div>
+      <div class="fila total"><span>Total</span><strong id="total">$0.00</strong></div>
+    </div>
+  </section>
+
+  <a class="btn btn-ghost btn-block" href="{{ url_for('cliente.carta', token=pedido.mesa.token) }}">
+    <svg class="ico"><use href="#i-plus"/></svg> Pedir algo más</a>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/seguimiento.js') }}"></script>{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titulo %}SmartMenu · Pedidos inteligentes{% endblock %}
+{% block clase_main %}ancho{% endblock %}
+{% block contenido %}
+<section class="hero">
+  <div class="hero-fondo" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
+  <p class="eyebrow"><svg class="ico"><use href="#i-qr"/></svg> Escanea · Pide · Disfruta</p>
+  <h1>Pide desde tu mesa,<br><em>sin esperas.</em></h1>
+  <p class="hero-texto">Carta digital con filtros de dieta y alérgenos, tiempos de entrega estimados
+    y seguimiento de tu pedido en vivo. La cocina recibe cada orden priorizada al instante.</p>
+  <div class="hero-cta">
+    <a class="btn btn-primary btn-lg" href="#mesas">Elegir mi mesa <svg class="ico"><use href="#i-arrow"/></svg></a>
+    <a class="btn btn-ghost btn-lg" href="{{ url_for('cocina.panel') }}"><svg class="ico"><use href="#i-chef"/></svg> Ver cocina</a>
+  </div>
+  <ul class="hero-datos">
+    <li><svg class="ico"><use href="#i-leaf"/></svg> Filtros vegano y sin gluten</li>
+    <li><svg class="ico"><use href="#i-timer"/></svg> Tiempo estimado real</li>
+    <li><svg class="ico"><use href="#i-tag"/></svg> Descuentos automáticos</li>
+  </ul>
+</section>
+
+<section id="mesas" class="seccion">
+  <div class="seccion-cab">
+    <h2>Elige una mesa</h2>
+    <p class="muted">En el local cada mesa tiene su código QR. Para la demostración, entra directamente a una.</p>
+  </div>
+
+  {% if mesas %}
+  <div class="mesas">
+    {% for m in mesas %}
+    <a class="mesa" href="{{ url_for('cliente.carta', token=m.token) }}" data-revelar style="--i: {{ loop.index0 }}">
+      <span class="mesa-ico"><svg class="ico"><use href="#i-table"/></svg></span>
+      <span class="mesa-num">Mesa {{ m.numero }}</span>
+      <span class="mesa-cap"><svg class="ico"><use href="#i-users"/></svg> {{ m.capacidad }} personas</span>
+      <span class="mesa-go">Abrir carta <svg class="ico"><use href="#i-arrow"/></svg></span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="vacio">
+    <svg class="ico"><use href="#i-table"/></svg>
+    <p>No hay mesas todavía. Ejecuta <code>flask --app run sembrar</code>.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

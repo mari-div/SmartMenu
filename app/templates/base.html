@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#DC2626">
+  <title>{% block titulo %}SmartMenu{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+  <script>
+    /* Aplica el tema guardado antes de pintar para evitar el parpadeo */
+    try { const t = localStorage.getItem("sm-tema"); if (t) document.documentElement.dataset.theme = t; } catch (_) {}
+  </script>
+</head>
+<body class="{% block clase_body %}{% endblock %}">
+  {% include "_iconos.html" %}
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+
+  <header class="barra">
+    <div class="barra-in">
+      <a class="logo" href="{{ url_for('cliente.inicio') }}" aria-label="SmartMenu, inicio">
+        <span class="logo-marca"><svg class="ico"><use href="#i-utensils"/></svg></span>
+        <span>Smart<em>Menu</em></span>
+      </a>
+      <nav class="nav" aria-label="Principal">
+        <a href="{{ url_for('cliente.inicio') }}" {% if request.endpoint in ('cliente.inicio','cliente.carta','cliente.seguimiento') %}aria-current="page"{% endif %}>
+          <svg class="ico"><use href="#i-qr"/></svg><span>Mesas</span></a>
+        <a href="{{ url_for('cocina.panel') }}" {% if request.endpoint == 'cocina.panel' %}aria-current="page"{% endif %}>
+          <svg class="ico"><use href="#i-chef"/></svg><span>Cocina</span></a>
+        <a href="{{ url_for('dashboard.panel') }}" {% if request.endpoint == 'dashboard.panel' %}aria-current="page"{% endif %}>
+          <svg class="ico"><use href="#i-chart"/></svg><span>Analítica</span></a>
+      </nav>
+      <button class="icon-btn" id="btn-tema" type="button" aria-label="Cambiar entre modo claro y oscuro">
+        <svg class="ico ico-luna"><use href="#i-moon"/></svg>
+        <svg class="ico ico-sol"><use href="#i-sun"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="contenido" class="contenedor {% block clase_main %}{% endblock %}">
+    {% block contenido %}{% endblock %}
+  </main>
+
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

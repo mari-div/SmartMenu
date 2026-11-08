@@ -1,0 +1,50 @@
+{# Parcial: navegacion de categorias + platos. Se usa en carta.html y, con ?parcial=1, para filtrar sin recargar. #}
+{% set icono_cat = {'Entradas': 'bowl', 'Platos fuertes': 'utensils', 'Pizzas': 'pizza', 'Postres': 'cake', 'Bebidas': 'cup'} %}
+{% if secciones %}
+<nav class="catnav" id="catnav" aria-label="Categorías de la carta">
+  {% for s in secciones %}
+  <a href="#cat-{{ loop.index }}">{{ s.nombre }}</a>
+  {% endfor %}
+</nav>
+
+{% for seccion in secciones %}
+{% set cat_slug = seccion.nombre|lower|replace(' ', '-') %}
+<section class="categoria" id="cat-{{ loop.index }}" aria-labelledby="h-cat-{{ loop.index }}">
+  <h2 id="h-cat-{{ loop.index }}">{{ seccion.nombre }} <span class="muted">{{ seccion.platos|length }}</span></h2>
+  <div class="platos">
+    {% for p in seccion.platos %}
+    <article class="plato" data-id="{{ p.id }}" data-nombre="{{ p.nombre }}" data-precio="{{ p.precio }}" style="--i: {{ loop.index0 }}">
+      <div class="tile" data-cat="{{ cat_slug }}" aria-hidden="true">
+        <svg class="ico"><use href="#i-{{ icono_cat.get(seccion.nombre, 'utensils') }}"/></svg>
+      </div>
+      <div class="plato-info">
+        <h3>{{ p.nombre }}</h3>
+        <p class="plato-desc">{{ p.descripcion }}</p>
+        <div class="etiquetas">
+          {% for e in p.etiquetas %}<span class="tag verde"><svg class="ico"><use href="#i-leaf"/></svg>{{ e }}</span>{% endfor %}
+          {% for a in p.alergenos %}<span class="tag alerta" title="Contiene {{ a }}"><svg class="ico"><use href="#i-alert"/></svg>{{ a }}</span>{% endfor %}
+        </div>
+        <span class="plato-tiempo"><svg class="ico"><use href="#i-clock"/></svg>~{{ p.tiempo_prep_min|round|int }} min</span>
+      </div>
+      <div class="plato-accion">
+        <strong class="precio">${{ '%.2f'|format(p.precio) }}</strong>
+        <button type="button" class="btn-add" aria-label="Agregar {{ p.nombre }}">
+          <svg class="ico"><use href="#i-plus"/></svg><span>Agregar</span>
+        </button>
+        <div class="stepper" role="group" aria-label="Cantidad de {{ p.nombre }}">
+          <button type="button" class="menos" aria-label="Quitar uno de {{ p.nombre }}"><svg class="ico"><use href="#i-minus"/></svg></button>
+          <output class="n" aria-live="polite">0</output>
+          <button type="button" class="mas" aria-label="Agregar uno más de {{ p.nombre }}"><svg class="ico"><use href="#i-plus"/></svg></button>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+{% else %}
+<div class="vacio">
+  <svg class="ico"><use href="#i-leaf"/></svg>
+  <p>Ningún plato cumple esos filtros a la vez.<br>Prueba quitando alguno.</p>
+</div>
+{% endif %}

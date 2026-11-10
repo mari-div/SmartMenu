@@ -67,6 +67,109 @@ def top_platos(df: pd.DataFrame, n: int = 10) -> pd.DataFrame:
               .sort_values("unidades", ascending=False)
               .head(n).reset_index())
 
+def prediccion_demanda(df: pd.DataFrame, dias: int = 7) -> pd.DataFrame:
+    """Predice las unidades que se venderán de cada plato durante los próximos días."""
+    columnas = ["plato", "fecha", "unidades_predichas"]
+
+    if df.empty or dias <= 0:
+        return pd.DataFrame(columns=columnas)
+
+    # Rango completo de fechas del historial
+    fechas = pd.date_range(
+        df["fecha"].min().normalize(),
+        df["fecha"].max().normalize(),
+        freq="D"
+    )
+
+    resultados = []
+
+    # Analizamos cada plato por separado
+    for plato, grupo in df.groupby("plato"):
+        ventas = (
+            grupo.groupby("fecha")["cantidad"]
+            .sum()
+            .reindex(fechas, fill_value=0)
+        )
+
+        # Convertimos los días en números: 0, 1, 2, 3...
+        x = np.arange(len(ventas))
+        y = ventas.to_numpy()
+
+                # 1. Tendencia: una recta que dice si las ventas suben o bajan
+        if len(y) >= 2:
+            pendiente, intercepto = np.polyfit(x, y, 1)
+        else:
+            pendiente, intercepto = 0, float(y[0])
+        tendencia = pendiente * x + intercepto
+
+        # 2. Efecto del día de la semana: cuánto se aleja cada día de la recta,
+        #    en promedio (ej.: los sábados se vende más que la tendencia)
+        desviacion = y - tendencia
+        efecto_dia = pd.Series(desviacion).groupby(fechas.day_of_week.to_numpy()).mean()
+
+        # 3. Fechas futuras y su día de la semana
+        fechas_futuras = pd.date_range(
+            fechas[-1] + pd.Timedelta(days=1), periods=dias, freq="D"
+        )
+        x_futuro = np.arange(len(y), len(y) + dias)
+        ajuste = (efecto_dia.reindex(fechas_futuras.day_of_week.to_numpy())
+                  .fillna(0).to_numpy())
+
+        # 4. Predicción = tendencia + efecto del día; sin valores negativos
+        predicciones = np.maximum(0, np.rint(pendiente * x_futuro + intercepto + ajuste))
+
+        
+
+        for fecha, unidades in zip(fechas_futuras, predicciones):
+            resultados.append({
+                "plato": plato,
+                "fecha": fecha,
+                "unidades_predichas": int(unidades)
+            })
+
+    return pd.DataFrame(resultados, columns=columnas)
+
+
+
+def matriz_ingenieria_menu(df: pd.DataFrame) -> pd.DataFrame:
+    """Clasifica los platos según su popularidad y margen."""
+
+    # 1. Si no hay datos, devolvemos una tabla vacía
+    if df.empty:
+        return pd.DataFrame()
+
+    # 2. Obtenemos todos los platos y sus resultados
+    platos = top_platos(df, n=df["plato"].nunique())
+
+    # 3. Calculamos las medianas
+    mediana_unidades = platos["unidades"].median()
+    mediana_margen = platos["margen"].median()
+
+    # 4. Identificamos popularidad y margen altos
+    popularidad_alta = platos["unidades"] >= mediana_unidades
+    margen_alto = platos["margen"] >= mediana_margen
+
+    # 5. Clasificamos cada plato
+    platos["clasificacion"] = np.select(
+        [
+            popularidad_alta & margen_alto,
+            popularidad_alta & ~margen_alto,
+            ~popularidad_alta & margen_alto
+        ],
+        [
+            "Estrella",
+            "Vaca",
+            "Puzzle"
+        ],
+        default="Perro"
+    )
+
+    # 6. Guardamos las medianas para utilizarlas en el gráfico
+    platos["mediana_unidades"] = mediana_unidades
+    platos["mediana_margen"] = mediana_margen
+
+    return platos
+
 
 def pareto_platos(df: pd.DataFrame) -> pd.DataFrame:
     """Analisis ABC: clase A = platos que generan el primer 80% de los ingresos,

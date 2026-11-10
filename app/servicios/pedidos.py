@@ -9,6 +9,14 @@ from app.funcional.cocina import (PedidoCocina, estimar_minutos_entrega, minutos
 from app.funcional.precios import Linea, calcular_total
 from app.models import ESTADOS_ACTIVOS, EstadoPedido, ItemPedido, Mesa, Pedido, Plato
 
+# ---------------------------------------------------------------- inventario
+from app.servicios.inventario import (
+    ErrorInventario,
+    descontar_stock,
+    validar_stock,
+)
+
+
 MAX_CANTIDAD_POR_PLATO = 20
 
 
@@ -86,6 +94,7 @@ def estimar_pedido(pedido: Pedido, ahora: datetime | None = None) -> float:
 
 
 # ---------------------------------------------------------------- crear pedido
+
 def crear_pedido(mesa: Mesa, items: list[dict], comensales: int = 1, notas: str = "",
                  ahora: datetime | None = None) -> Pedido:
     ahora = ahora or datetime.now()
@@ -95,16 +104,46 @@ def crear_pedido(mesa: Mesa, items: list[dict], comensales: int = 1, notas: str 
         raise ErrorPedido("'comensales' debe ser un numero")
 
     lineas = _lineas_validadas(items)
-    desglose = calcular_total([Linea(p.precio, c) for p, c, _ in lineas],
-                              hora=ahora.hour, comensales=comensales)
-    pedido = Pedido(mesa=mesa, comensales=comensales, notas=str(notas)[:255], creado_en=ahora,
-                    subtotal=desglose.subtotal, descuento=desglose.descuento,
-                    total=desglose.total)
-    pedido.items = [ItemPedido(plato=p, cantidad=c, precio_unitario=p.precio, notas=n)
-                    for p, c, n in lineas]
-    db.session.add(pedido)
-    db.session.commit()
-    return pedido
+    desglose = calcular_total(
+        [Linea(p.precio, c) for p, c, _ in lineas],
+        hora=ahora.hour,
+        comensales=comensales
+    )
+
+    try:
+        # Validar el stock de todos los platos antes de descontar.
+        for plato, cantidad, _ in lineas:
+            validar_stock(plato, cantidad)
+
+        pedido = Pedido(
+            mesa=mesa,
+            comensales=comensales,
+            notas=str(notas)[:255],
+            creado_en=ahora,
+            subtotal=desglose.subtotal,
+            descuento=desglose.descuento,
+            total=desglose.total
+        )
+
+        pedido.items = [
+            ItemPedido(plato=p, cantidad=c, precio_unitario=p.precio, notas=n)
+            for p, c, n in lineas
+        ]
+
+        # Descontar los ingredientes utilizados.
+        for plato, cantidad, _ in lineas:
+            descontar_stock(plato, cantidad)
+
+        db.session.add(pedido)
+        db.session.commit()
+        return pedido
+
+    except ErrorInventario as error:
+        db.session.rollback()
+        raise ErrorPedido(str(error))
+    except Exception:
+        db.session.rollback()
+        raise
 
 
 # ---------------------------------------------------------------- serializacion (JSON)

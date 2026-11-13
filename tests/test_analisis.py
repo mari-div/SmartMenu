@@ -126,3 +126,46 @@ def test_ventas_diarias_excluye_el_dia_en_curso():
                        "fecha": [hoy - pd.Timedelta(days=1), hoy - pd.Timedelta(days=1), hoy]})
     diario = metricas.ventas_diarias(df)
     assert len(diario) == 1 and diario["ingresos"].iloc[0] == 30.0     # hoy (incompleto) no cuenta
+
+def test_matriz_ingenieria_menu_clasifica_correctamente():
+    # Creamos ventas ficticias para cuatro platos
+    df = pd.DataFrame({
+        "plato": ["Hamburguesa", "Pizza", "Ensalada", "Sopa"],
+        "categoria": ["Comida", "Comida", "Comida", "Comida"],
+        "cantidad": [100, 80, 20, 10],
+        "ingreso_linea": [1000, 800, 200, 100],
+        "margen_linea": [500, 200, 300, 50]
+    })
+
+    # Ejecutamos nuestra función
+    resultado = metricas.matriz_ingenieria_menu(df)
+
+    # Convertimos el resultado en un diccionario
+    clasificaciones = resultado.set_index("plato")["clasificacion"].to_dict()
+
+    # Comprobamos las cuatro clasificaciones
+    assert clasificaciones["Hamburguesa"] == "Estrella"
+    assert clasificaciones["Pizza"] == "Vaca"
+    assert clasificaciones["Ensalada"] == "Puzzle"
+    assert clasificaciones["Sopa"] == "Perro"
+
+
+def test_prediccion_demanda_genera_siete_dias():
+    df = pd.DataFrame({
+        "plato": ["Hamburguesa"] * 4,
+        "fecha": pd.to_datetime([
+            "2026-11-01",
+            "2026-11-02",
+            "2026-11-03",
+            "2026-11-04"
+        ]),
+        "cantidad": [10, 12, 14, 16]
+    })
+
+    resultado = metricas.prediccion_demanda(df, dias=7)
+
+    assert len(resultado) == 7
+    assert resultado["plato"].eq("Hamburguesa").all()
+    assert resultado["unidades_predichas"].ge(0).all()
+    assert resultado["fecha"].min() == pd.Timestamp("2026-11-05")
+    assert resultado["fecha"].max() == pd.Timestamp("2026-11-11")

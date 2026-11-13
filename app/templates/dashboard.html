@@ -43,7 +43,9 @@
 {% set titulos = {
   'ventas_por_hora': 'Pedidos por hora', 'ventas_por_dia_semana': 'Ingreso por día de la semana',
   'top_platos': 'Platos más vendidos', 'ventas_diarias': 'Tendencia de ingresos',
-  'pareto': 'Pareto ABC de platos', 'tiempos_por_hora': 'Tiempos de cocina por hora'} %}
+  'pareto': 'Pareto ABC de platos', 'tiempos_por_hora': 'Tiempos de cocina por hora',
+  'matriz_ingenieria_menu': 'Matriz de ingeniería del menú',
+  'prediccion_demanda': 'Predicción de demanda para los próximos 7 días',} %}
 <div class="graficos">
   {% for g in graficos %}
   <figure class="grafico {{ 'grande' if g == 'pareto' }}" data-revelar style="--i: {{ loop.index0 }}">

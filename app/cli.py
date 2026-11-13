@@ -22,11 +22,12 @@ def registrar_comandos(app):
     @app.cli.command("sembrar")
     @click.option("--mesas", default=10, show_default=True, help="Cantidad de mesas")
     def sembrar(mesas):
-        """Carga el menu de ejemplo y las mesas."""
-        from app.seed import sembrar_menu, sembrar_mesas
+        """Carga el menu de ejemplo, las mesas y los usuarios de prueba."""
+        from app.seed import sembrar_menu, sembrar_mesas, sembrar_usuarios
         db.create_all()
         click.echo("Menú creado." if sembrar_menu() else "El menú ya existía.")
         click.echo(f"Mesas nuevas: {sembrar_mesas(mesas)}")
+        click.echo(f"Usuarios nuevos: {sembrar_usuarios()}  (admin/admin123, mozo1/mozo123, cocina1/cocina123)")
 
     @app.cli.command("generar-datos")
     @click.option("--dias", default=45, show_default=True)

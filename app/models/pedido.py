@@ -63,6 +63,9 @@ class Pedido(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     mesa_id = db.Column(db.Integer, db.ForeignKey("mesas.id"), nullable=False)
+    mozo_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), index=True)   # quien tomo el pedido
+    # Codigo secreto del pedido: va dentro del QR que se entrega al cliente
+    token = db.Column(db.String(32), unique=True, nullable=False, default=_nuevo_token)
     estado = db.Column(db.String(20), nullable=False, default=EstadoPedido.PENDIENTE.value,
                        index=True)
     comensales = db.Column(db.Integer, nullable=False, default=1)
@@ -79,6 +82,7 @@ class Pedido(db.Model):
     entregado_en = db.Column(db.DateTime)
 
     mesa = db.relationship("Mesa", back_populates="pedidos")
+    mozo = db.relationship("Usuario", foreign_keys=[mozo_id])
     items = db.relationship("ItemPedido", back_populates="pedido",
                             cascade="all, delete-orphan")
 

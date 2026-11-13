@@ -6,12 +6,16 @@
   <div>
     <p class="eyebrow"><svg class="ico"><use href="#i-chef"/></svg> Panel de cocina</p>
     <h1>Pedidos en vivo</h1>
-    <p class="muted">Los pendientes se ordenan por prioridad: tiempo de espera, rapidez del plato y tamaño de la mesa.</p>
+    <p class="muted">Llegan aquí los pedidos que toman los mozos. Los pendientes se ordenan por prioridad (espera, rapidez del plato y tamaño de la mesa). Al marcar un pedido como listo, se avisa al mozo.</p>
   </div>
-  <div class="vivo" id="vivo"><span class="punto-vivo" aria-hidden="true"></span> <span id="vivo-txt">Conectando…</span></div>
+  <div class="panel-acciones">
+    <button class="btn btn-ghost" id="btn-sonido" type="button" aria-pressed="true">
+      <svg class="ico"><use href="#i-volume"/></svg><span>Sonido activado</span></button>
+    <div class="vivo" id="vivo"><span class="punto-vivo" aria-hidden="true"></span> <span id="vivo-txt">Conectando…</span></div>
+  </div>
 </div>
 
-<div class="kanban" id="kanban">
+<div class="kanban" id="kanban" data-rol="{{ rol }}">
   <section class="col col-pend" aria-labelledby="h-pend">
     <h2 id="h-pend"><svg class="ico"><use href="#i-bell"/></svg> Pendientes <span class="contador" id="c-pendientes">0</span></h2>
     <div class="col-lista" id="col-pendientes"></div>

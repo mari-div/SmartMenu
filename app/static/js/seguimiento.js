@@ -1,7 +1,7 @@
 // Seguimiento del pedido en vivo: consulta el estado cada 4 segundos.
 (() => {
   const raiz = document.getElementById("seguimiento");
-  const id = raiz.dataset.id;
+  const token = raiz.dataset.token;
   const $ = (x) => document.getElementById(x);
   const { dinero, el, icono, toast, contar } = SM;
 
@@ -61,7 +61,7 @@
 
   async function actualizar() {
     try {
-      const r = await fetch(`/api/pedidos/${id}`);
+      const r = await fetch(`/api/seguimiento/${token}`);
       if (!r.ok) throw new Error();
       const p = await r.json();
       pintarEstado(p); pintarEta(p); pintarDetalle(p);

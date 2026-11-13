@@ -6,7 +6,7 @@
 
   const SM = {
     reducido,
-    dinero: (n) => "$" + Number(n).toFixed(2),
+    dinero: (n) => "S/ " + Number(n).toFixed(2),
 
     // Crea un icono SVG del sprite:  SM.icono("check", "mi-clase")
     icono(nombre, clase = "") {
@@ -63,6 +63,48 @@
     alCambiarTema(fn) { addEventListener("sm-tema", fn); },
   };
   window.SM = SM;
+
+  // ------------------------------------------------------------ sonido de alertas (Web Audio, sin archivos)
+  let audio = null;
+  const guardado = () => { try { return localStorage.getItem("sm-sonido") !== "off"; } catch (_) { return true; } };
+  SM.sonidoActivo = guardado();
+
+  // Los navegadores solo permiten sonar tras un gesto del usuario: el primer clic lo habilita
+  addEventListener("pointerdown", () => {
+    if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {} }
+    if (audio?.state === "suspended") audio.resume();
+  }, { once: false });
+
+  // tipo "nuevo": dos notas (pedido nuevo en cocina) · "listo": tres notas ascendentes (aviso al mozo)
+  SM.beep = (tipo = "nuevo") => {
+    if (!SM.sonidoActivo || !audio || audio.state !== "running") return;
+    const notas = tipo === "listo" ? [660, 880, 1175] : [523, 784];
+    notas.forEach((f, i) => {
+      const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime + i * 0.16;
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+      o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.3);
+    });
+  };
+
+  // Boton "Sonido activado/desactivado" (si la pagina lo tiene)
+  const btnSonido = document.getElementById("btn-sonido");
+  if (btnSonido) {
+    const pintar = () => {
+      btnSonido.setAttribute("aria-pressed", String(SM.sonidoActivo));
+      btnSonido.querySelector("span").textContent = SM.sonidoActivo ? "Sonido activado" : "Sonido silenciado";
+      btnSonido.querySelector("use").setAttribute("href", SM.sonidoActivo ? "#i-volume" : "#i-volume-off");
+    };
+    btnSonido.addEventListener("click", () => {
+      SM.sonidoActivo = !SM.sonidoActivo;
+      try { localStorage.setItem("sm-sonido", SM.sonidoActivo ? "on" : "off"); } catch (_) {}
+      pintar();
+      if (SM.sonidoActivo) setTimeout(() => SM.beep("nuevo"), 50);
+    });
+    pintar();
+  }
 
   // Boton de tema claro / oscuro
   document.getElementById("btn-tema")?.addEventListener("click", () => {

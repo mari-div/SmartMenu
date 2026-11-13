@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titulo %}Ingresar · SmartMenu{% endblock %}
+{% block clase_body %}pagina-login{% endblock %}
+{% block contenido %}
+<div class="login-wrap">
+  <section class="login-card" aria-labelledby="h-login">
+    <span class="login-ico"><svg class="ico"><use href="#i-lock"/></svg></span>
+    <h1 id="h-login">Ingresar</h1>
+    <p class="muted">Acceso del personal: mozos, cocina y administración.</p>
+
+    <form method="post" novalidate>
+      <div class="campo">
+        <label for="username">Usuario</label>
+        <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none"
+               value="{{ username }}" required autofocus>
+      </div>
+      <div class="campo">
+        <label for="password">Contraseña</label>
+        <div class="campo-pass">
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" class="ver-pass" id="ver-pass" aria-label="Mostrar contraseña"><svg class="ico"><use href="#i-eye"/></svg></button>
+        </div>
+      </div>
+      {% if error %}<p class="error" role="alert"><svg class="ico"><use href="#i-alert"/></svg> {{ error }}</p>{% endif %}
+      <button class="btn btn-primary btn-block btn-lg" type="submit">Entrar</button>
+    </form>
+
+    <details class="demo-cred">
+      <summary>Usuarios de demostración</summary>
+      <table>
+        <tr><td><b>admin</b></td><td>admin123</td><td>Administrador</td></tr>
+        <tr><td><b>mozo1</b></td><td>mozo123</td><td>Mozo</td></tr>
+        <tr><td><b>cocina1</b></td><td>cocina123</td><td>Cocina</td></tr>
+      </table>
+    </details>
+  </section>
+  <p class="login-pie muted">¿Eres cliente? Escanea el <b>código QR</b> que te entregó tu mozo para seguir tu pedido.</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById("ver-pass").addEventListener("click", (e) => {
+    const campo = document.getElementById("password");
+    const ver = campo.type === "password";
+    campo.type = ver ? "text" : "password";
+    e.currentTarget.setAttribute("aria-label", ver ? "Ocultar contraseña" : "Mostrar contraseña");
+  });
+</script>
+{% endblock %}

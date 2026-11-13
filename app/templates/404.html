@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titulo %}No encontrado · SmartMenu{% endblock %}
+{% block contenido %}
+<div class="vacio estado-error">
+  <svg class="ico"><use href="#i-qr"/></svg>
+  <h1>No encontramos esa página</h1>
+  <p>Si escaneaste un QR, pídele a tu mozo uno nuevo.</p>
+  <a class="btn btn-primary" href="{{ url_for('cliente.inicio') }}">Volver al inicio</a>
+</div>
+{% endblock %}

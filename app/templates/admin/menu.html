@@ -1,0 +1,41 @@
+{% extends "admin/_layout.html" %}
+{% block titulo %}Menú e inventario · Admin · SmartMenu{% endblock %}
+{% block admin %}
+<div class="panel-cab"><div><p class="eyebrow"><svg class="ico"><use href="#i-utensils"/></svg> Carta e inventario</p><h1>Menú y stock</h1></div></div>
+
+<h2 class="subtitulo">Platos <small class="muted">(precios en soles)</small></h2>
+<div class="tabla-wrap"><table class="tabla tabla-edit" id="tabla-platos">
+  <thead><tr><th>Foto</th><th>Plato</th><th class="num">Precio S/</th><th class="num">Costo S/</th><th>Disponible</th><th>Enlace de la foto</th><th></th></tr></thead>
+  <tbody>
+  {% for cat in categorias %}
+  <tr class="fila-cat"><td colspan="7">{{ cat.nombre }}</td></tr>
+  {% for p in cat.platos %}
+  <tr data-id="{{ p.id }}">
+    <td data-label="Foto"><span class="mini-foto">{% if p.imagen_url %}<img src="{{ p.imagen_url }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">{% endif %}</span></td>
+    <td data-label="Plato"><b>{{ p.nombre }}</b><br><small class="muted">margen {{ p.margen_pct }}%</small></td>
+    <td class="num" data-label="Precio"><input class="in-num" name="precio" type="number" step="0.10" min="0.1" value="{{ '%.2f'|format(p.precio) }}" aria-label="Precio de {{ p.nombre }}"></td>
+    <td class="num" data-label="Costo"><input class="in-num" name="costo" type="number" step="0.10" min="0" value="{{ '%.2f'|format(p.costo) }}" aria-label="Costo de {{ p.nombre }}"></td>
+    <td data-label="Disponible"><label class="switch"><input name="disponible" type="checkbox" {{ 'checked' if p.disponible }} aria-label="{{ p.nombre }} disponible"><span></span></label></td>
+    <td data-label="Foto (URL)"><input class="in-url" name="imagen_url" type="url" value="{{ p.imagen_url or '' }}" placeholder="https://…" aria-label="Foto de {{ p.nombre }}"></td>
+    <td><button class="btn btn-primary btn-sm guardar-plato" type="button">Guardar</button></td>
+  </tr>
+  {% endfor %}{% endfor %}
+  </tbody></table></div>
+
+<h2 class="subtitulo">Inventario de ingredientes</h2>
+<p class="muted">Se descuenta solo al tomar pedidos. Los ingredientes en rojo están por debajo del mínimo.</p>
+<div class="tabla-wrap"><table class="tabla" id="tabla-stock">
+  <thead><tr><th>Ingrediente</th><th class="num">Stock</th><th class="num">Mínimo</th><th>Estado</th><th>Reponer</th></tr></thead>
+  <tbody>
+  {% for i in ingredientes %}
+  <tr data-id="{{ i.id }}" class="{{ 'stock-bajo' if i.stock_bajo }}">
+    <td data-label="Ingrediente">{{ i.nombre }}</td>
+    <td class="num stock-val" data-label="Stock">{{ '%.1f'|format(i.stock) }} {{ i.unidad }}</td>
+    <td class="num" data-label="Mínimo">{{ '%.1f'|format(i.stock_minimo) }} {{ i.unidad }}</td>
+    <td data-label="Estado"><span class="badge {{ 'b-cancelado' if i.stock_bajo else 'b-entregado' }} estado-stock">{{ 'Stock bajo' if i.stock_bajo else 'Normal' }}</span></td>
+    <td data-label="Reponer"><span class="reponer"><input class="in-num" type="number" min="1" step="1" value="10" aria-label="Cantidad a reponer de {{ i.nombre }}"><button class="btn btn-ghost btn-sm" type="button">+ Reponer</button></span></td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin_menu.js') }}"></script>{% endblock %}

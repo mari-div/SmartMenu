@@ -109,7 +109,7 @@ def ventas_por_dia_semana(df) -> Figure:
     fig, ax = _base("Ingreso promedio por día de la semana")
 
     ax.bar(datos["nombre_dia"], datos["ingreso_prom_dia"], color=COLOR_2)
-    ax.set_ylabel("Ingreso promedio ($)")
+    ax.set_ylabel("Ingreso promedio (S/)")
 
     return fig
 
@@ -145,10 +145,10 @@ def ventas_diarias(df) -> Figure:
         pendiente * x + intercepto,
         color=COLOR_2,
         linestyle="--",
-        label=f"Tendencia ({pendiente:+.1f} $/día)"
+        label=f"Tendencia ({pendiente:+.1f} S/ por día)"
     )
 
-    ax.set_ylabel("Ingresos ($)")
+    ax.set_ylabel("Ingresos (S/)")
     ax.legend(frameon=False)
 
     fig.autofmt_xdate()
@@ -188,7 +188,7 @@ def pareto(df) -> Figure:
     })
 
     ax.bar(datos["plato"], datos["ingreso_linea"], color=colores)
-    ax.set_ylabel("Ingresos ($)")
+    ax.set_ylabel("Ingresos (S/)")
     ax.tick_params(axis="x", rotation=70)
 
     for etiqueta in ax.get_xticklabels():

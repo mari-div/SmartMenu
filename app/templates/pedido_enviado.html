@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titulo %}Pedido #{{ pedido.id }} enviado · SmartMenu{% endblock %}
+{% block contenido %}
+<div class="enviado">
+  <div class="enviado-ok"><svg class="ico"><use href="#i-check"/></svg></div>
+  <h1>¡Pedido enviado a cocina!</h1>
+  <p class="muted">Mesa {{ pedido.mesa.numero }} · Pedido #{{ pedido.id }} · Total <b>S/ {{ '%.2f'|format(pedido.total) }}</b></p>
+
+  <section class="qr-card" aria-labelledby="h-qr">
+    <h2 id="h-qr"><svg class="ico"><use href="#i-qr"/></svg> Código QR para el cliente</h2>
+    <p class="muted">Muéstraselo al cliente: al escanearlo verá en tiempo real cómo va su pedido.</p>
+    <img class="qr-img" src="{{ url_for('cliente.qr', token=pedido.token) }}" alt="Código QR para seguir el pedido {{ pedido.id }}" width="260" height="260">
+    <div class="qr-url">
+      <input id="url-seg" type="text" readonly value="{{ url }}" aria-label="Enlace de seguimiento">
+      <button class="btn btn-ghost" id="copiar" type="button"><svg class="ico"><use href="#i-copy"/></svg> Copiar</button>
+    </div>
+    {% if 'localhost' in url or '127.0.0.1' in url %}
+    <p class="aviso-red"><svg class="ico"><use href="#i-alert"/></svg>
+      <span>Este enlace apunta a <b>localhost</b>: un celular no podrá abrirlo. Configura <code>BASE_URL</code> con la IP de la PC (ver README).</span></p>
+    {% endif %}
+  </section>
+
+  <div class="enviado-acciones">
+    <a class="btn btn-primary btn-lg" href="{{ url_for('mozo.panel') }}"><svg class="ico"><use href="#i-table"/></svg> Volver a mesas</a>
+    <a class="btn btn-ghost btn-lg" href="{{ url_for('cliente.seguimiento', token=pedido.token) }}" target="_blank" rel="noopener">Ver como cliente</a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById("copiar").addEventListener("click", async () => {
+    const campo = document.getElementById("url-seg");
+    try { await navigator.clipboard.writeText(campo.value); SM.toast("Enlace copiado", "ok"); }
+    catch (_) { campo.select(); document.execCommand("copy"); SM.toast("Enlace copiado", "ok"); }
+  });
+</script>
+{% endblock %}

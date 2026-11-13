@@ -35,8 +35,13 @@ class Ingrediente(db.Model):
     tipo = db.Column(db.String(20), nullable=False, default=TipoIngrediente.OTRO.value)
     tiene_gluten = db.Column(db.Boolean, nullable=False, default=False)
     tiene_frutos_secos = db.Column(db.Boolean, nullable=False, default=False)
-    stock = db.Column(db.Float, nullable=False, default=0)       # para inventario (fase 2)
+    stock = db.Column(db.Float, nullable=False, default=0)
+    stock_minimo = db.Column(db.Float, nullable=False, default=5)   # debajo de esto: alerta
     unidad = db.Column(db.String(10), nullable=False, default="kg")
+
+    @property
+    def stock_bajo(self) -> bool:
+        return self.stock <= self.stock_minimo
 
     def __repr__(self):
         return f"<Ingrediente {self.nombre}>"
@@ -64,6 +69,7 @@ class Plato(db.Model):
     costo = db.Column(db.Numeric(10, 2, asdecimal=False), nullable=False, default=0)
     tiempo_prep_min = db.Column(db.Float, nullable=False, default=10)
     disponible = db.Column(db.Boolean, nullable=False, default=True)
+    imagen_url = db.Column(db.String(500))            # foto (enlace de internet)
     categoria_id = db.Column(db.Integer, db.ForeignKey("categorias.id"), nullable=False)
 
     categoria = db.relationship("Categoria", back_populates="platos")
@@ -89,6 +95,7 @@ class Plato(db.Model):
             "nombre": self.nombre,
             "descripcion": self.descripcion,
             "precio": float(self.precio),
+            "imagen_url": self.imagen_url or "",
             "categoria": self.categoria.nombre,
             "tiempo_prep_min": self.tiempo_prep_min,
             "disponible": self.disponible,

@@ -7,7 +7,8 @@ from app.extensions import db
 from app.funcional.cocina import (PedidoCocina, estimar_minutos_entrega, minutos_espera,
                                   ordenar_cola, prioridad)
 from app.funcional.precios import Linea, calcular_total
-from app.models import ESTADOS_ACTIVOS, EstadoPedido, ItemPedido, Mesa, Pedido, Plato
+from app.models import (ESTADOS_ACTIVOS, EstadoPedido, ItemPedido, Mesa, Pedido, Plato,
+                        Usuario)
 
 # ---------------------------------------------------------------- inventario
 from app.servicios.inventario import (
@@ -96,7 +97,7 @@ def estimar_pedido(pedido: Pedido, ahora: datetime | None = None) -> float:
 # ---------------------------------------------------------------- crear pedido
 
 def crear_pedido(mesa: Mesa, items: list[dict], comensales: int = 1, notas: str = "",
-                 ahora: datetime | None = None) -> Pedido:
+                 ahora: datetime | None = None, mozo: Usuario | None = None) -> Pedido:
     ahora = ahora or datetime.now()
     try:
         comensales = max(1, min(int(comensales), 30))
@@ -117,6 +118,7 @@ def crear_pedido(mesa: Mesa, items: list[dict], comensales: int = 1, notas: str 
 
         pedido = Pedido(
             mesa=mesa,
+            mozo=mozo,
             comensales=comensales,
             notas=str(notas)[:255],
             creado_en=ahora,
@@ -151,7 +153,10 @@ def pedido_a_dict(p: Pedido, ahora: datetime | None = None) -> dict:
     ahora = ahora or datetime.now()
     return {
         "id": p.id,
+        "token": p.token,
         "mesa": p.mesa.numero,
+        "mozo": p.mozo.nombre if p.mozo else "",
+        "listo_hace_min": round((ahora - p.listo_en).total_seconds() / 60, 1) if p.listo_en and p.estado == "listo" else None,
         "estado": p.estado,
         "comensales": p.comensales,
         "notas": p.notas,
@@ -187,3 +192,30 @@ def cola_cocina(ahora: datetime | None = None) -> dict:
         "listos": [pedido_a_dict(p, ahora) for p in activos
                    if p.estado == EstadoPedido.LISTO.value],
     }
+
+
+def pedido_publico_dict(p: Pedido, ahora: datetime | None = None) -> dict:
+    """Lo que ve el cliente al escanear su QR: sin ids internos ni datos del personal."""
+    d = pedido_a_dict(p, ahora)
+    return {k: d[k] for k in ("mesa", "mozo", "estado", "total", "descuento", "creado_en",
+                              "minutos_estimados", "items")}
+
+
+# ---------------------------------------------------------------- panel del mozo
+def panel_mozo(mozo: Usuario, ahora: datetime | None = None) -> dict:
+    """Mesas con su estado y los pedidos activos del mozo (los LISTOS van primero)."""
+    ahora = ahora or datetime.now()
+    activos = _pedidos_activos()
+    por_mesa: dict[int, Pedido] = {}
+    for p in activos:                                   # el mas reciente por mesa
+        por_mesa[p.mesa_id] = p
+    mesas = [{
+        "id": m.id, "numero": m.numero, "capacidad": m.capacidad,
+        "ocupada": m.id in por_mesa,
+        "estado": por_mesa[m.id].estado if m.id in por_mesa else "libre",
+    } for m in Mesa.query.order_by(Mesa.numero).all()]
+
+    propios = [p for p in activos if p.mozo_id == mozo.id]
+    orden = {"listo": 0, "pendiente": 1, "en_preparacion": 2}
+    propios.sort(key=lambda p: (orden.get(p.estado, 9), p.creado_en))
+    return {"mesas": mesas, "pedidos": [pedido_a_dict(p, ahora) for p in propios]}

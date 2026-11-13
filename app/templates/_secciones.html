@@ -16,6 +16,8 @@
     <article class="plato" data-id="{{ p.id }}" data-nombre="{{ p.nombre }}" data-precio="{{ p.precio }}" style="--i: {{ loop.index0 }}">
       <div class="tile" data-cat="{{ cat_slug }}" aria-hidden="true">
         <svg class="ico"><use href="#i-{{ icono_cat.get(seccion.nombre, 'utensils') }}"/></svg>
+        {% if p.imagen_url %}<img src="{{ p.imagen_url }}" alt="" loading="lazy" referrerpolicy="no-referrer"
+             onerror="this.remove()" onload="this.classList.add('ok')">{% endif %}
       </div>
       <div class="plato-info">
         <h3>{{ p.nombre }}</h3>
@@ -27,7 +29,7 @@
         <span class="plato-tiempo"><svg class="ico"><use href="#i-clock"/></svg>~{{ p.tiempo_prep_min|round|int }} min</span>
       </div>
       <div class="plato-accion">
-        <strong class="precio">${{ '%.2f'|format(p.precio) }}</strong>
+        <strong class="precio">S/ {{ '%.2f'|format(p.precio) }}</strong>
         <button type="button" class="btn-add" aria-label="Agregar {{ p.nombre }}">
           <svg class="ico"><use href="#i-plus"/></svg><span>Agregar</span>
         </button>

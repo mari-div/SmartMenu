@@ -5,9 +5,9 @@
   const $ = (id) => document.getElementById(id);
   const { dinero, el, icono, toast, contar, reducido } = SM;
   const aside = $("carrito");
-  const token = aside.dataset.mesaToken;
-  const menu = $("menu");
-  const claveCarrito = "sm-carrito-" + token;
+    const menu = $("menu");
+  const mesaId = Number(aside.dataset.mesaId);
+  const claveCarrito = "sm-carrito-mesa-" + mesaId;
 
   // ---------------------------------------------------------------- estado
   let carrito = new Map();                                // id -> {id, nombre, precio, cantidad}
@@ -184,15 +184,15 @@
     try {
       const r = await fetch("/api/pedidos", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mesa_token: token, items: items(), comensales: comensales(), notas: $("notas").value }),
+        body: JSON.stringify({ mesa_id: mesaId, items: items(), comensales: comensales(), notas: $("notas").value }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "No se pudo enviar el pedido");
       try { sessionStorage.removeItem(claveCarrito); } catch (_) {}
       boton.classList.remove("enviando"); boton.classList.add("ok");
       boton.querySelector(".btn-texto").textContent = "¡Pedido enviado!";
-      toast("Tu pedido llegó a la cocina", "ok");
-      setTimeout(() => { location.href = "/pedido/" + d.id; }, reducido ? 0 : 700);
+      toast("Pedido enviado a cocina", "ok");
+      setTimeout(() => { location.href = "/mozo/pedido/" + d.id; }, reducido ? 0 : 700);
     } catch (e) {
       boton.classList.remove("enviando"); boton.disabled = false;
       $("error").textContent = e.message; $("error").hidden = false;

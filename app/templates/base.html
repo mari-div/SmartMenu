@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/paneles.css') }}">
   <script>
     /* Aplica el tema guardado antes de pintar para evitar el parpadeo */
     try { const t = localStorage.getItem("sm-tema"); if (t) document.documentElement.dataset.theme = t; } catch (_) {}
@@ -25,13 +26,32 @@
         <span>Smart<em>Menu</em></span>
       </a>
       <nav class="nav" aria-label="Principal">
-        <a href="{{ url_for('cliente.inicio') }}" {% if request.endpoint in ('cliente.inicio','cliente.carta','cliente.seguimiento') %}aria-current="page"{% endif %}>
-          <svg class="ico"><use href="#i-qr"/></svg><span>Mesas</span></a>
-        <a href="{{ url_for('cocina.panel') }}" {% if request.endpoint == 'cocina.panel' %}aria-current="page"{% endif %}>
-          <svg class="ico"><use href="#i-chef"/></svg><span>Cocina</span></a>
-        <a href="{{ url_for('dashboard.panel') }}" {% if request.endpoint == 'dashboard.panel' %}aria-current="page"{% endif %}>
-          <svg class="ico"><use href="#i-chart"/></svg><span>Analítica</span></a>
+        {% if usuario %}
+          {% if usuario.rol in ('mozo', 'admin') %}
+          <a href="{{ url_for('mozo.panel') }}" {% if request.blueprint == 'mozo' %}aria-current="page"{% endif %}>
+            <svg class="ico"><use href="#i-table"/></svg><span>Mesas</span></a>
+          {% endif %}
+          {% if usuario.rol in ('cocina', 'admin') %}
+          <a href="{{ url_for('cocina.panel') }}" {% if request.blueprint == 'cocina' %}aria-current="page"{% endif %}>
+            <svg class="ico"><use href="#i-chef"/></svg><span>Cocina</span></a>
+          {% endif %}
+          {% if usuario.rol == 'admin' %}
+          <a href="{{ url_for('admin.resumen') }}" {% if request.blueprint == 'admin' %}aria-current="page"{% endif %}>
+            <svg class="ico"><use href="#i-chart"/></svg><span>Admin</span></a>
+          {% endif %}
+        {% endif %}
       </nav>
+      {% if usuario %}
+      <div class="usuario-chip" title="{{ usuario.nombre }} · {{ etiqueta_rol }}">
+        <span class="avatar" aria-hidden="true">{{ usuario.nombre[:1] }}</span>
+        <span class="usuario-txt"><b>{{ usuario.nombre.split()[0] }}</b><small>{{ etiqueta_rol }}</small></span>
+      </div>
+      <form method="post" action="{{ url_for('auth.logout') }}" class="form-salir">
+        <button class="icon-btn" type="submit" aria-label="Cerrar sesión" title="Cerrar sesión"><svg class="ico"><use href="#i-logout"/></svg></button>
+      </form>
+      {% else %}
+      <a class="btn btn-primary btn-sm" href="{{ url_for('auth.login') }}">Ingresar</a>
+      {% endif %}
       <button class="icon-btn" id="btn-tema" type="button" aria-label="Cambiar entre modo claro y oscuro">
         <svg class="ico ico-luna"><use href="#i-moon"/></svg>
         <svg class="ico ico-sol"><use href="#i-sun"/></svg>

@@ -1,0 +1,27 @@
+{% extends "admin/_layout.html" %}
+{% block titulo %}Pedidos · Admin · SmartMenu{% endblock %}
+{% block admin %}
+<div class="panel-cab"><div><p class="eyebrow"><svg class="ico"><use href="#i-receipt"/></svg> Pedidos</p><h1>Últimos 100 pedidos</h1></div>
+  <form method="get" class="filtro-form"><label for="estado" class="muted">Estado</label>
+    <select id="estado" name="estado" onchange="this.form.submit()">
+      <option value="">Todos</option>
+      {% for e in ['pendiente','en_preparacion','listo','entregado','cancelado'] %}
+      <option value="{{ e }}" {{ 'selected' if e == estado }}>{{ e.replace('_',' ').capitalize() }}</option>{% endfor %}
+    </select></form></div>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>#</th><th>Fecha</th><th>Mesa</th><th>Mozo</th><th>Estado</th><th class="num">Total</th><th>Detalle</th></tr></thead>
+  <tbody>
+  {% for p in lista %}
+  <tr>
+    <td data-label="#">{{ p.id }}</td>
+    <td data-label="Fecha">{{ p.creado_en.strftime('%d/%m %H:%M') }}</td>
+    <td data-label="Mesa">{{ p.mesa.numero }}</td>
+    <td data-label="Mozo">{{ p.mozo.nombre if p.mozo else '—' }}</td>
+    <td data-label="Estado"><span class="badge b-{{ p.estado }}">{{ p.estado.replace('_',' ') }}</span></td>
+    <td class="num" data-label="Total">S/ {{ '%.2f'|format(p.total) }}</td>
+    <td data-label="Detalle"><details><summary>{{ p.items|length }} ítems</summary>
+      <ul class="mini-lista">{% for i in p.items %}<li>{{ i.cantidad }}× {{ i.plato.nombre }}</li>{% endfor %}</ul></details></td>
+  </tr>
+  {% else %}<tr><td colspan="7" class="vacio-mini">Sin pedidos.</td></tr>{% endfor %}
+  </tbody></table></div>
+{% endblock %}

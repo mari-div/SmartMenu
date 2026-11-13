@@ -1,0 +1,23 @@
+{% extends "admin/_layout.html" %}
+{% block titulo %}Análisis avanzado · Admin · SmartMenu{% endblock %}
+{% block admin %}
+<div class="panel-cab"><div><p class="eyebrow"><svg class="ico"><use href="#i-trend"/></svg> Ciencia de datos</p><h1>Análisis avanzado</h1>
+  <p class="muted">Gráficos generados con pandas, numpy y matplotlib: ingeniería de menú, Pareto ABC y predicción de demanda.</p></div></div>
+{% if not hay_datos %}
+<div class="vacio"><svg class="ico"><use href="#i-chart"/></svg><p>Todavía no hay ventas. Ejecuta <code>flask --app run generar-datos</code>.</p></div>
+{% else %}
+<p class="limpieza"><svg class="ico"><use href="#i-check"/></svg>
+  <span>Datos depurados: <b>{{ informe.pedidos_iniciales }}</b> pedidos leídos → <b>{{ informe.pedidos_cancelados }}</b> cancelados excluidos,
+  <b>{{ informe.pedidos_sin_tiempos }}</b> sin marca de tiempo y <b>{{ informe.pedidos_con_tiempo_atipico }}</b> con tiempo atípico descartado →
+  <b>{{ informe.pedidos_validos }}</b> pedidos válidos.</span></p>
+<div class="graficos">
+  {% for g in graficos %}
+  <figure class="grafico {{ 'grande' if g in ('pareto','prediccion_demanda','matriz_ingenieria_menu') }}" data-revelar style="--i: {{ loop.index0 }}">
+    <figcaption>{{ titulos.get(g, g) }}</figcaption>
+    <div class="grafico-marco cargando"><img data-g="{{ g }}" alt="Gráfico: {{ titulos.get(g, g) }}" width="880" height="484"></div>
+  </figure>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin_analisis.js') }}"></script>{% endblock %}

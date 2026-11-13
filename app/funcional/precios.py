@@ -66,11 +66,11 @@ def happy_hour(ctx: Contexto) -> tuple[float, str]:
 
 
 def descuento_volumen(ctx: Contexto) -> tuple[float, str]:
-    """8% si el subtotal llega a $50, 5% si llega a $30."""
-    if ctx.subtotal >= 50:
-        return 0.08, "Consumo mayor a $50"
-    if ctx.subtotal >= 30:
-        return 0.05, "Consumo mayor a $30"
+    """8% si el subtotal llega a S/ 180, 5% si llega a S/ 100."""
+    if ctx.subtotal >= 180:
+        return 0.08, "Consumo mayor a S/ 180"
+    if ctx.subtotal >= 100:
+        return 0.05, "Consumo mayor a S/ 100"
     return 0.0, ""
 
 

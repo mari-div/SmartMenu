@@ -1,0 +1,57 @@
+{% extends "admin/_layout.html" %}
+{% block titulo %}Resumen · Admin · SmartMenu{% endblock %}
+{% block admin %}
+<div class="panel-cab">
+  <div>
+    <p class="eyebrow"><svg class="ico"><use href="#i-chart"/></svg> Panel de administración</p>
+    <h1>Resumen del negocio</h1>
+  </div>
+  <div class="selector-rango" role="group" aria-label="Periodo">
+    <button type="button" data-dias="1">Hoy</button>
+    <button type="button" data-dias="7">7 días</button>
+    <button type="button" data-dias="30" class="activo">30 días</button>
+    <button type="button" data-dias="3650">Todo</button>
+  </div>
+</div>
+
+<section class="vivo-strip" id="vivo" aria-label="Estado en vivo">
+  <div class="vivo-item"><span class="punto-vivo" aria-hidden="true"></span><b>En vivo</b></div>
+  <div class="vivo-item"><span>Activos</span><b id="v-activos">–</b></div>
+  <div class="vivo-item"><span>Pendientes</span><b id="v-pendientes">–</b></div>
+  <div class="vivo-item"><span>Cocinando</span><b id="v-prep">–</b></div>
+  <div class="vivo-item"><span>Listos sin entregar</span><b id="v-listos">–</b></div>
+  <div class="vivo-item alerta-item" id="v-demorados-wrap" hidden><span>Demorados</span><b id="v-demorados">0</b></div>
+</section>
+
+<div id="vacio-resumen" class="vacio" hidden>
+  <svg class="ico"><use href="#i-chart"/></svg>
+  <p>No hay ventas en este periodo.<br>Prueba con otro rango o ejecuta <code>flask --app run generar-datos</code>.</p>
+</div>
+
+<div id="contenido-resumen" hidden>
+  <div class="kpis kpis-admin" id="kpis"></div>
+  <p class="limpieza" id="limpieza"></p>
+
+  <div class="graf-grid">
+    <figure class="graf graf-2"><figcaption>Ingresos diarios y tendencia <small>(S/)</small></figcaption><div class="graf-lienzo"><canvas id="g-diarias" role="img" aria-label="Ingresos diarios con media móvil"></canvas></div></figure>
+    <figure class="graf"><figcaption>Ventas por categoría</figcaption><div class="graf-lienzo"><canvas id="g-categorias" role="img" aria-label="Ingresos por categoría"></canvas></div></figure>
+    <figure class="graf"><figcaption>Pedidos por hora</figcaption><div class="graf-lienzo"><canvas id="g-horas" role="img" aria-label="Pedidos por hora del día"></canvas></div></figure>
+    <figure class="graf"><figcaption>Platos más vendidos <small>(unidades)</small></figcaption><div class="graf-lienzo"><canvas id="g-top" role="img" aria-label="Platos más vendidos"></canvas></div></figure>
+    <figure class="graf"><figcaption>Rendimiento por mozo <small>(S/)</small></figcaption><div class="graf-lienzo"><canvas id="g-mozos" role="img" aria-label="Ingresos por mozo"></canvas></div></figure>
+    <figure class="graf"><figcaption>Tiempos de cocina por hora <small>(min)</small></figcaption><div class="graf-lienzo"><canvas id="g-tiempos" role="img" aria-label="Espera y preparación por hora"></canvas></div></figure>
+    <figure class="graf"><figcaption>Ingreso promedio por día de la semana <small>(S/)</small></figcaption><div class="graf-lienzo"><canvas id="g-dias" role="img" aria-label="Ingreso promedio por día de la semana"></canvas></div></figure>
+    <figure class="graf graf-2"><figcaption>Mapa de calor: ¿cuándo se llena el local? <small>(pedidos)</small></figcaption><div class="calor" id="calor"></div></figure>
+  </div>
+
+  <div class="alertas-admin" id="alertas-admin"></div>
+
+  <h2 class="subtitulo">Top platos: ventas y margen</h2>
+  <div class="tabla-wrap"><table class="tabla" id="tabla-top">
+    <thead><tr><th>Plato</th><th>Categoría</th><th class="num">Unidades</th><th class="num">Ingresos</th><th class="num">Margen</th></tr></thead>
+    <tbody></tbody></table></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_resumen.js') }}"></script>
+{% endblock %}

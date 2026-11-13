@@ -6,6 +6,7 @@ from sqlalchemy import text
 CONSULTA_VENTAS = text("""
     SELECT p.id              AS pedido_id,
            p.mesa_id,
+           COALESCE(u.nombre, 'Sin asignar') AS mozo,
            p.estado,
            p.comensales,
            p.subtotal        AS subtotal_pedido,
@@ -26,6 +27,7 @@ CONSULTA_VENTAS = text("""
     JOIN items_pedido i ON i.pedido_id = p.id
     JOIN platos pl      ON pl.id = i.plato_id
     JOIN categorias c   ON c.id = pl.categoria_id
+    LEFT JOIN usuarios u ON u.id = p.mozo_id
 """)
 
 COLUMNAS_FECHA = ["creado_en", "inicio_prep_en", "listo_en", "entregado_en"]

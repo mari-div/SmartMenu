@@ -15,7 +15,7 @@ import numpy as np
 
 from app.extensions import db
 from app.funcional.precios import Linea, calcular_total
-from app.models import ItemPedido, Mesa, Pedido, Plato
+from app.models import ItemPedido, Mesa, Pedido, Plato, Usuario
 
 PESO_HORA = {11: 1, 12: 5, 13: 8, 14: 5, 15: 1.5, 16: 1, 17: 1.5, 18: 3,
              19: 7, 20: 9, 21: 6, 22: 2}
@@ -25,7 +25,7 @@ PESO_PLATO = {
     "Hamburguesa clásica": 10, "Pizza pepperoni": 8, "Pizza margarita": 6, "Pasta alfredo": 5,
     "Pollo a la parrilla": 5, "Arroz con camarones": 3, "Hamburguesa vegana": 2,
     "Pizza vegetariana": 3, "Alitas BBQ": 4, "Nachos con queso": 4, "Ensalada fresca": 2,
-    "Hummus con pan pita": 1, "Papas fritas": 1,
+    "Hummus con pan pita": 1, "Papas fritas": 1, "Lomo saltado": 9, "Ceviche clásico": 5,
 }
 # Si piden X, con cierta probabilidad agregan Y
 AFINIDAD = {
@@ -39,6 +39,8 @@ AFINIDAD = {
     "Pasta alfredo": {"Jugo natural": 0.3, "Café": 0.2},
     "Pollo a la parrilla": {"Jugo natural": 0.4, "Limonada": 0.3},
     "Arroz con camarones": {"Limonada": 0.5, "Cerveza artesanal": 0.2},
+    "Lomo saltado": {"Gaseosa": 0.5, "Cerveza artesanal": 0.3, "Jugo natural": 0.2},
+    "Ceviche clásico": {"Cerveza artesanal": 0.45, "Limonada": 0.3},
 }
 BEBIDAS = ["Gaseosa", "Limonada", "Jugo natural", "Cerveza artesanal", "Café"]
 POSTRES = ["Brownie con helado", "Flan de caramelo", "Ensalada de frutas"]
@@ -77,6 +79,7 @@ def generar_historial(dias: int = 45, pedidos_base: int = 55, semilla: int = 42,
     rng = np.random.default_rng(semilla)
     platos = {p.nombre: p for p in Plato.query.all()}
     mesas = Mesa.query.all()
+    mozos = Usuario.query.filter_by(rol="mozo").all()
     if not platos or not mesas:
         raise RuntimeError("Primero siembra el menu y las mesas (flask sembrar)")
 
@@ -101,6 +104,7 @@ def generar_historial(dias: int = 45, pedidos_base: int = 55, semilla: int = 42,
             d = calcular_total([Linea(p.precio, c) for p, c in lineas], int(hora), comensales)
 
             pedido = Pedido(mesa=mesas[rng.integers(len(mesas))], comensales=comensales,
+                            mozo=mozos[rng.integers(len(mozos))] if mozos else None,
                             creado_en=creado, subtotal=d.subtotal, descuento=d.descuento,
                             total=d.total)
             pedido.items = [ItemPedido(plato=p, cantidad=c, precio_unitario=p.precio)

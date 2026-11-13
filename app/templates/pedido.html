@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block titulo %}Pedido #{{ pedido.id }} · SmartMenu{% endblock %}
+{% block titulo %}Mi pedido · SmartMenu{% endblock %}
 {% block contenido %}
-<div class="seguimiento" id="seguimiento" data-id="{{ pedido.id }}" data-estado="{{ pedido.estado }}">
-  <p class="eyebrow"><svg class="ico"><use href="#i-table"/></svg> Mesa {{ pedido.mesa.numero }} · Pedido #{{ pedido.id }}</p>
+<div class="seguimiento" id="seguimiento" data-token="{{ pedido.token }}" data-estado="{{ pedido.estado }}">
+  <p class="eyebrow"><svg class="ico"><use href="#i-table"/></svg> Mesa {{ pedido.mesa.numero }}{% if pedido.mozo %} · Te atiende {{ pedido.mozo.nombre.split()[0] }}{% endif %}</p>
 
   <div class="estado-card">
     <div class="anillo" id="anillo" aria-hidden="true">
@@ -35,12 +35,11 @@
     <ul class="detalle" id="detalle"></ul>
     <div class="recibo-totales">
       <div class="fila" id="r-fila-desc" hidden><span>Descuento</span><span id="r-descuento"></span></div>
-      <div class="fila total"><span>Total</span><strong id="total">$0.00</strong></div>
+      <div class="fila total"><span>Total</span><strong id="total">S/ 0.00</strong></div>
     </div>
   </section>
 
-  <a class="btn btn-ghost btn-block" href="{{ url_for('cliente.carta', token=pedido.mesa.token) }}">
-    <svg class="ico"><use href="#i-plus"/></svg> Pedir algo más</a>
+  <p class="muted centrado">¿Necesitas algo más? Llama a tu mozo, con gusto te atenderá.</p>
 </div>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static', filename='js/seguimiento.js') }}"></script>{% endblock %}

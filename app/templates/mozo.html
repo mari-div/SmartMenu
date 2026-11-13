@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titulo %}Mozo · SmartMenu{% endblock %}
+{% block clase_main %}ancho{% endblock %}
+{% block contenido %}
+<div class="panel-cab">
+  <div>
+    <p class="eyebrow"><svg class="ico"><use href="#i-table"/></svg> Panel del mozo</p>
+    <h1>Hola, {{ usuario.nombre.split()[0] }}</h1>
+  </div>
+  <div class="panel-acciones">
+    <button class="btn btn-ghost" id="btn-sonido" type="button" aria-pressed="true">
+      <svg class="ico"><use href="#i-volume"/></svg><span>Sonido activado</span></button>
+    <span class="vivo"><span class="punto-vivo" aria-hidden="true"></span> <span id="vivo-txt">Conectando…</span></span>
+  </div>
+</div>
+
+<section id="alertas" class="alertas" aria-live="assertive" aria-label="Pedidos listos para entregar" hidden>
+  <h2><svg class="ico"><use href="#i-bell"/></svg> Listos para entregar <span class="contador" id="c-listos">0</span></h2>
+  <div class="alertas-lista" id="lista-listos"></div>
+</section>
+
+<div class="mozo-grid">
+  <section aria-labelledby="h-mesas">
+    <h2 id="h-mesas">Mesas</h2>
+    <p class="muted">Toca una mesa para tomar un pedido nuevo.</p>
+    <div class="mesas mesas-mozo" id="mesas"></div>
+  </section>
+  <section aria-labelledby="h-curso">
+    <h2 id="h-curso">Mis pedidos en curso <span class="contador" id="c-curso">0</span></h2>
+    <div class="curso-lista" id="lista-curso"></div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/mozo.js') }}"></script>{% endblock %}

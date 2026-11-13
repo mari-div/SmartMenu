@@ -22,9 +22,9 @@ def test_happy_hour():
 
 
 def test_descuento_por_volumen():
-    assert descuento_volumen(Contexto(29.99, 3, 15))[0] == 0
-    assert descuento_volumen(Contexto(30, 3, 15))[0] == 0.05
-    assert descuento_volumen(Contexto(50, 3, 15))[0] == 0.08
+    assert descuento_volumen(Contexto(99.99, 3, 15))[0] == 0
+    assert descuento_volumen(Contexto(100, 3, 15))[0] == 0.05
+    assert descuento_volumen(Contexto(180, 3, 15))[0] == 0.08
 
 
 def test_descuento_grupo():

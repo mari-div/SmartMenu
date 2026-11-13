@@ -5,6 +5,7 @@
   const $ = (id) => document.getElementById(id);
   const { el, icono, toast, reducido } = SM;
 
+  const rol = document.getElementById("kanban").dataset.rol;
   const COLUMNAS = {
     pendientes: { lista: $("col-pendientes"), contador: $("c-pendientes"), boton: ["Empezar a cocinar", "flame"] },
     en_preparacion: { lista: $("col-preparacion"), contador: $("c-preparacion"), boton: ["Marcar listo", "check"] },
@@ -13,6 +14,7 @@
   COLUMNAS.pendientes.lista.dataset.vacio = "Sin pedidos pendientes. ¡Todo al día!";
   COLUMNAS.en_preparacion.lista.dataset.vacio = "Nada en preparación ahora.";
   COLUMNAS.listos.lista.dataset.vacio = "Aún no hay pedidos listos.";
+  if (rol === "cocina") COLUMNAS.listos.boton = ["", "check"];
 
   let primeraCarga = true;
   const vistos = new Set();                            // para avisar de pedidos nuevos
@@ -34,6 +36,7 @@
     const reloj = el("span", { class: "reloj" }, icono("clock"), el("span", { class: "min" }));
     const meta = el("div", { class: "ticket-meta" },
       el("span", {}, icono("users"), `${p.comensales} comensal${p.comensales === 1 ? "" : "es"}`),
+      p.mozo ? el("span", {}, icono("user"), p.mozo) : null,
       el("span", { class: "prio" }));
     const ul = el("ul", {}, ...p.items.map((i) =>
       el("li", {}, el("b", {}, `${i.cantidad}×`), el("span", {}, i.plato, i.notas ? el("small", {}, ` — ${i.notas}`) : null))));
@@ -43,9 +46,15 @@
       meta, ul);
     if (p.notas) t.append(el("div", { class: "ticket-nota" }, icono("note"), p.notas));
 
-    const principal = el("button", { type: "button", class: "principal" }, icono(icoBoton), textoBoton);
-    principal.addEventListener("click", () => enviar(p.id, "avanzar", principal));
-    const acciones = el("div", { class: "ticket-acc" }, principal);
+    const acciones = el("div", { class: "ticket-acc" });
+    if (columna === "listos" && rol === "cocina") {
+      // La cocina no entrega: el mozo ya fue avisado y viene por el pedido
+      acciones.append(el("span", { class: "espera-mozo" }, icono("bell"), `Esperando a ${p.mozo || "el mozo"}`));
+    } else {
+      const principal = el("button", { type: "button", class: "principal" }, icono(icoBoton), textoBoton);
+      principal.addEventListener("click", () => enviar(p.id, "avanzar", principal));
+      acciones.append(principal);
+    }
     if (columna !== "listos") {
       const cancelar = el("button", { type: "button", class: "cancelar", "aria-label": `Cancelar pedido ${p.id}` }, icono("x"));
       let temporizador;
@@ -101,12 +110,14 @@
   async function cargar() {
     try {
       const r = await fetch("/api/cocina/cola");
+      if (r.status === 401) { location.href = "/login?next=/cocina"; return; }
       if (!r.ok) throw new Error();
       const d = await r.json();
 
       const nuevos = d.pendientes.filter((p) => !vistos.has(p.id));
       nuevos.forEach((p) => vistos.add(p.id));
       if (!primeraCarga && nuevos.length) {
+        SM.beep("nuevo");
         toast(nuevos.length === 1 ? `Nuevo pedido: Mesa ${nuevos[0].mesa}` : `${nuevos.length} pedidos nuevos`, "info");
         if (navigator.vibrate) navigator.vibrate(80);
       }
@@ -126,6 +137,6 @@
   }
 
   cargar();
-  setInterval(cargar, 4000);
+  setInterval(cargar, 3000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) cargar(); });
 })();

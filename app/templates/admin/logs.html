@@ -1,0 +1,31 @@
+{% extends "admin/_layout.html" %}
+{% block titulo %}Bitácora · Admin · SmartMenu{% endblock %}
+{% block admin %}
+<div class="panel-cab"><div><p class="eyebrow"><svg class="ico"><use href="#i-list"/></svg> Auditoría</p><h1>Bitácora del sistema</h1>
+  <p class="muted">Quién hizo qué y cuándo: accesos, pedidos, cambios de estado, ediciones y accesos denegados.</p></div></div>
+<form method="get" class="filtro-form filtros-logs">
+  <select name="accion" aria-label="Filtrar por acción" onchange="this.form.submit()">
+    <option value="">Todas las acciones</option>
+    {% for a in acciones %}<option value="{{ a }}" {{ 'selected' if a == accion }}>{{ a }}</option>{% endfor %}
+  </select>
+  <input type="search" name="q" value="{{ q }}" placeholder="Buscar usuario o detalle…" aria-label="Buscar">
+  <button class="btn btn-ghost" type="submit">Buscar</button>
+</form>
+<div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Fecha</th><th>Usuario</th><th>Rol</th><th>Acción</th><th>Detalle</th><th>IP</th></tr></thead>
+  <tbody>
+  {% for f in filas %}
+  <tr>
+    <td data-label="Fecha">{{ f.fecha.strftime('%d/%m %H:%M:%S') }}</td>
+    <td data-label="Usuario">{{ f.username or '—' }}</td><td data-label="Rol">{{ f.rol or '—' }}</td>
+    <td data-label="Acción"><span class="badge b-log-{{ 'alerta' if f.accion in ('LOGIN_FALLIDO','LOGIN_BLOQUEADO','ACCESO_DENEGADO') else 'normal' }}">{{ f.accion }}</span></td>
+    <td data-label="Detalle">{{ f.detalle }}</td><td data-label="IP" class="muted">{{ f.ip or '' }}</td>
+  </tr>
+  {% else %}<tr><td colspan="6" class="vacio-mini">Sin registros.</td></tr>{% endfor %}
+  </tbody></table></div>
+<nav class="paginacion" aria-label="Páginas">
+  {% if pagina > 1 %}<a class="btn btn-ghost btn-sm" href="?pagina={{ pagina-1 }}&accion={{ accion }}&q={{ q }}">← Anterior</a>{% endif %}
+  <span class="muted">Página {{ pagina }} de {{ paginas }} · {{ total }} registros</span>
+  {% if pagina < paginas %}<a class="btn btn-ghost btn-sm" href="?pagina={{ pagina+1 }}&accion={{ accion }}&q={{ q }}">Siguiente →</a>{% endif %}
+</nav>
+{% endblock %}

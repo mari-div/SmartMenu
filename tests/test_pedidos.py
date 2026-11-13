@@ -19,14 +19,14 @@ def _pedido(ahora=None, *pares):
 
 def test_crear_pedido_calcula_total_y_guarda_precio(app):
     p = _pedido(None, ("Hamburguesa clásica", 2), ("Gaseosa", 1))
-    assert p.subtotal == 21.80 and p.total == 21.80 and p.descuento == 0
+    assert p.subtotal == 62.00 and p.total == 62.00 and p.descuento == 0
     assert p.estado == "pendiente"
-    assert {i.precio_unitario for i in p.items} == {9.90, 2.00}
+    assert {i.precio_unitario for i in p.items} == {28.00, 6.00}
 
 
 def test_happy_hour_se_aplica_por_la_hora_del_pedido(app):
     p = _pedido(datetime(2026, 11, 13, 17, 30), ("Pizza pepperoni", 2))
-    assert p.subtotal == 25.0 and p.descuento == 3.75 and p.total == 21.25
+    assert p.subtotal == 72.0 and p.descuento == 10.80 and p.total == 61.20
 
 
 def test_platos_repetidos_se_juntan(app):

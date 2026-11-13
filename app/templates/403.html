@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titulo %}Sin permiso · SmartMenu{% endblock %}
+{% block contenido %}
+<div class="vacio estado-error">
+  <svg class="ico"><use href="#i-shield"/></svg>
+  <h1>No tienes permiso</h1>
+  <p>Tu rol ({{ etiqueta_rol or 'sin sesión' }}) no puede entrar a esta sección.</p>
+  <a class="btn btn-primary" href="{{ url_for('cliente.inicio') }}">Volver al inicio</a>
+</div>
+{% endblock %}

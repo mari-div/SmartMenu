@@ -1,0 +1,33 @@
+{% extends "admin/_layout.html" %}
+{% block titulo %}Usuarios · Admin · SmartMenu{% endblock %}
+{% block admin %}
+<div class="panel-cab"><div><p class="eyebrow"><svg class="ico"><use href="#i-users"/></svg> Personal</p><h1>Usuarios y roles</h1></div></div>
+
+<form class="form-usuario" id="form-usuario" autocomplete="off">
+  <h2>Nuevo usuario</h2>
+  <div class="form-grid">
+    <div class="campo"><label for="n-nombre">Nombre completo</label><input id="n-nombre" required maxlength="80"></div>
+    <div class="campo"><label for="n-user">Usuario</label><input id="n-user" required pattern="[a-z0-9_]{3,30}" placeholder="ej. mozo3" autocapitalize="none"></div>
+    <div class="campo"><label for="n-pass">Contraseña (mín. 6)</label><input id="n-pass" type="password" required minlength="6" autocomplete="new-password"></div>
+    <div class="campo"><label for="n-rol">Rol</label>
+      <select id="n-rol">{% for r in roles %}<option value="{{ r }}">{{ r.capitalize() }}</option>{% endfor %}</select></div>
+  </div>
+  <p class="error" id="error-usuario" role="alert" hidden></p>
+  <button class="btn btn-primary" type="submit"><svg class="ico"><use href="#i-plus"/></svg> Crear usuario</button>
+</form>
+
+<div class="tabla-wrap"><table class="tabla" id="tabla-usuarios">
+  <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Último acceso</th><th>Activo</th><th></th></tr></thead>
+  <tbody>
+  {% for u in lista %}
+  <tr data-id="{{ u.id }}" data-user="{{ u.username }}">
+    <td data-label="Usuario"><b>{{ u.username }}</b></td><td data-label="Nombre">{{ u.nombre }}</td>
+    <td data-label="Rol"><span class="badge b-rol-{{ u.rol }}">{{ u.etiqueta_rol }}</span></td>
+    <td data-label="Último acceso">{{ u.ultimo_acceso.strftime('%d/%m %H:%M') if u.ultimo_acceso else 'Nunca' }}</td>
+    <td data-label="Activo"><label class="switch"><input class="sw-activo" type="checkbox" {{ 'checked' if u.activo }} {{ 'disabled' if u.id == usuario.id }} aria-label="{{ u.username }} activo"><span></span></label></td>
+    <td><button class="btn btn-ghost btn-sm reset-clave" type="button">Cambiar clave</button></td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/admin_usuarios.js') }}"></script>{% endblock %}

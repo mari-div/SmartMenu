@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Proyecto anterior usado solo como referencia (no se sube)
+FogonCriollo/

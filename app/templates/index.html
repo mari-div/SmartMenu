@@ -4,43 +4,33 @@
 {% block contenido %}
 <section class="hero">
   <div class="hero-fondo" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
-  <p class="eyebrow"><svg class="ico"><use href="#i-qr"/></svg> Escanea · Pide · Disfruta</p>
-  <h1>Pide desde tu mesa,<br><em>sin esperas.</em></h1>
-  <p class="hero-texto">Carta digital con filtros de dieta y alérgenos, tiempos de entrega estimados
-    y seguimiento de tu pedido en vivo. La cocina recibe cada orden priorizada al instante.</p>
+  <p class="eyebrow"><svg class="ico"><use href="#i-qr"/></svg> Pedidos inteligentes</p>
+  <h1>Del pedido a tu mesa,<br><em>en tiempo real.</em></h1>
+  <p class="hero-texto">El mozo toma tu pedido, la cocina lo prepara con prioridad y tú sigues cada paso
+    desde tu celular escaneando un código QR. Sin esperas ni dudas.</p>
   <div class="hero-cta">
-    <a class="btn btn-primary btn-lg" href="#mesas">Elegir mi mesa <svg class="ico"><use href="#i-arrow"/></svg></a>
-    <a class="btn btn-ghost btn-lg" href="{{ url_for('cocina.panel') }}"><svg class="ico"><use href="#i-chef"/></svg> Ver cocina</a>
+    {% if usuario %}
+    <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}">Ir a mi panel <svg class="ico"><use href="#i-arrow"/></svg></a>
+    {% else %}
+    <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}"><svg class="ico"><use href="#i-lock"/></svg> Ingresar al sistema</a>
+    {% endif %}
   </div>
   <ul class="hero-datos">
-    <li><svg class="ico"><use href="#i-leaf"/></svg> Filtros vegano y sin gluten</li>
     <li><svg class="ico"><use href="#i-timer"/></svg> Tiempo estimado real</li>
-    <li><svg class="ico"><use href="#i-tag"/></svg> Descuentos automáticos</li>
+    <li><svg class="ico"><use href="#i-bell"/></svg> Aviso al mozo cuando el plato está listo</li>
+    <li><svg class="ico"><use href="#i-leaf"/></svg> Filtros vegano y sin gluten</li>
   </ul>
 </section>
 
-<section id="mesas" class="seccion">
-  <div class="seccion-cab">
-    <h2>Elige una mesa</h2>
-    <p class="muted">En el local cada mesa tiene su código QR. Para la demostración, entra directamente a una.</p>
+<section class="seccion">
+  <div class="seccion-cab"><h2>¿Cómo funciona?</h2></div>
+  <div class="pasos-info">
+    <div class="paso-info" data-revelar style="--i:0"><span class="num">1</span><svg class="ico"><use href="#i-table"/></svg>
+      <h3>El mozo toma tu pedido</h3><p class="muted">Desde su celular, con la carta digital y los filtros de dieta y alérgenos.</p></div>
+    <div class="paso-info" data-revelar style="--i:1"><span class="num">2</span><svg class="ico"><use href="#i-chef"/></svg>
+      <h3>La cocina lo prepara</h3><p class="muted">Recibe el pedido al instante, priorizado, y avisa cuando está listo.</p></div>
+    <div class="paso-info" data-revelar style="--i:2"><span class="num">3</span><svg class="ico"><use href="#i-qr"/></svg>
+      <h3>Tú lo sigues con un QR</h3><p class="muted">Escaneas el código y ves el avance y el tiempo estimado en vivo.</p></div>
   </div>
-
-  {% if mesas %}
-  <div class="mesas">
-    {% for m in mesas %}
-    <a class="mesa" href="{{ url_for('cliente.carta', token=m.token) }}" data-revelar style="--i: {{ loop.index0 }}">
-      <span class="mesa-ico"><svg class="ico"><use href="#i-table"/></svg></span>
-      <span class="mesa-num">Mesa {{ m.numero }}</span>
-      <span class="mesa-cap"><svg class="ico"><use href="#i-users"/></svg> {{ m.capacidad }} personas</span>
-      <span class="mesa-go">Abrir carta <svg class="ico"><use href="#i-arrow"/></svg></span>
-    </a>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="vacio">
-    <svg class="ico"><use href="#i-table"/></svg>
-    <p>No hay mesas todavía. Ejecuta <code>flask --app run sembrar</code>.</p>
-  </div>
-  {% endif %}
 </section>
 {% endblock %}

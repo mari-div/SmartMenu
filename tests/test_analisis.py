@@ -83,13 +83,14 @@ def test_los_graficos_se_generan(limpio):
         assert png[:8] == b"\x89PNG\r\n\x1a\n", nombre
 
 
-def test_reporte_completo_y_dashboard(app, client, tmp_path):
+def test_reporte_completo_y_dashboard(app, entrar, tmp_path):
+    client = entrar("admin")
     generar_historial(dias=10, pedidos_base=25, semilla=3, hasta=HASTA)
     r = generar_reporte(db.engine, carpeta=tmp_path, imprimir=False)
     assert len(list(tmp_path.glob("*.png"))) == len(graficos.GRAFICOS)
     assert r["kpis"]["pedidos"] > 0
-    assert b"Ingresos" in client.get("/dashboard/").data
-    assert client.get("/dashboard/grafico/top_platos.png").mimetype == "image/png"
+    assert b"Ingresos" in client.get("/admin/").data
+    assert client.get("/admin/grafico/top_platos.png").mimetype == "image/png"
 
 
 def test_reporte_sin_datos_da_error_claro(app, tmp_path):
@@ -112,10 +113,11 @@ def test_limpieza_con_dataframe_minimo():
     assert df["prep_real_min"].eq(10).all() and df["espera_cocina_min"].eq(1).all()
 
 
-def test_grafico_en_modo_oscuro(app, client):
+def test_grafico_en_modo_oscuro(app, entrar):
+    client = entrar("admin")
     generar_historial(dias=7, pedidos_base=20, semilla=5, hasta=HASTA)
-    claro = client.get("/dashboard/grafico/pareto.png?tema=claro")
-    oscuro = client.get("/dashboard/grafico/pareto.png?tema=oscuro")
+    claro = client.get("/admin/grafico/pareto.png?tema=claro")
+    oscuro = client.get("/admin/grafico/pareto.png?tema=oscuro")
     assert claro.mimetype == oscuro.mimetype == "image/png"
     assert claro.data != oscuro.data                      # cambian los colores de fondo y texto
 

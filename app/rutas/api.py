@@ -1,8 +1,13 @@
 """API JSON usada por las paginas (carrito, cocina y seguimiento)."""
+
 from flask import Blueprint, jsonify, request
 
 from app.extensions import db
-from app.models import EstadoPedido, Mesa, Pedido, TransicionInvalida
+from app.models import EstadoPedido, Mesa, Pedido, Plato, TransicionInvalida
+from app.funcional.recomendador import (
+    construir_matriz_coocurrencia,
+    recomendar_con_ids,
+)
 from app.servicios import pedidos as servicio
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -22,7 +27,7 @@ def _error_transicion(e):
 def cotizar():
     datos = request.get_json(silent=True) or {}
     items = datos.get("items", [])
-    if not items:  # carrito vacio: todo en cero
+    if not items:
         return jsonify(subtotal=0, descuento=0, total=0, regla_aplicada="")
     return jsonify(servicio.cotizar(items, datos.get("comensales", 1)))
 
@@ -33,8 +38,10 @@ def crear_pedido():
     mesa = Mesa.query.filter_by(token=str(datos.get("mesa_token", ""))).first()
     if mesa is None:
         return jsonify(error="Mesa no válida"), 404
-    pedido = servicio.crear_pedido(mesa, datos.get("items", []),
-                                   datos.get("comensales", 1), datos.get("notas", ""))
+    pedido = servicio.crear_pedido(
+        mesa, datos.get("items", []),
+        datos.get("comensales", 1), datos.get("notas", "")
+    )
     return jsonify(servicio.pedido_a_dict(pedido)), 201
 
 
@@ -62,3 +69,49 @@ def cancelar(pedido_id: int):
 @bp.get("/cocina/cola")
 def cola():
     return jsonify(servicio.cola_cocina())
+
+
+# ---------------------------------------------------------------- recomendaciones
+@bp.get("/recomendaciones/<int:plato_id>")
+def recomendaciones(plato_id: int):
+    """Recomienda platos que suelen pedirse junto con el plato indicado."""
+
+    plato = db.session.get(Plato, plato_id)
+    if plato is None:
+        return jsonify(error="Plato no encontrado"), 404
+
+    try:
+        n = int(request.args.get("n", 5))
+        if n < 0:
+            return jsonify(error="n debe ser mayor o igual a cero"), 400
+    except (TypeError, ValueError):
+        return jsonify(error="n debe ser un número entero"), 400
+
+    platos = Plato.query.order_by(Plato.id).all()
+    plato_ids = [p.id for p in platos]
+
+    pedidos_entregados = Pedido.query.filter_by(
+        estado=EstadoPedido.ENTREGADO.value
+    ).all()
+
+    pedidos = [
+        [item.plato_id for item in pedido.items]
+        for pedido in pedidos_entregados
+    ]
+
+    matriz = construir_matriz_coocurrencia(pedidos, plato_ids)
+
+    ids_recomendados = recomendar_con_ids(
+        plato_id, matriz, plato_ids, n
+    )
+
+    platos_por_id = {p.id: p for p in platos}
+
+    return jsonify({
+        "plato_id": plato_id,
+        "recomendaciones": [
+            platos_por_id[id_recomendado].a_dict()
+            for id_recomendado in ids_recomendados
+        ]
+    })
+

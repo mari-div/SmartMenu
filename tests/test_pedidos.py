@@ -5,6 +5,7 @@ import pytest
 from app.extensions import db
 from app.models import EstadoPedido, Mesa, Plato, TransicionInvalida
 from app.servicios import pedidos as servicio
+from app.servicios.inventario import ErrorInventario, validar_stock
 
 
 def _items(*pares):
@@ -93,3 +94,72 @@ def test_estimacion_crece_con_la_carga(app):
     segundo = _pedido(ahora + timedelta(seconds=30), ("Hamburguesa clásica", 1))
     assert servicio.estimar_pedido(segundo, ahora + timedelta(seconds=30)) > solo
     assert servicio.estimar_pedido(primero, ahora) == solo       # no se afecta por los que llegan despues
+
+
+
+
+# PRUEBAS DE INVENTARIO # 
+
+def test_crear_pedido_descontar_stock_ingredientes(app):
+    plato = Plato.query.filter_by(nombre="Hamburguesa clásica").one()
+
+    stock_inicial = {
+        relacion.ingrediente.id: relacion.ingrediente.stock
+        for relacion in plato.ingredientes
+    }
+
+    cantidad = 2
+
+    pedido = _pedido(None, ("Hamburguesa clásica", cantidad))
+
+    assert pedido.id is not None
+
+    for relacion in plato.ingredientes:
+        ingrediente = relacion.ingrediente
+        necesario = relacion.cantidad * cantidad
+
+        assert ingrediente.stock == pytest.approx(
+            stock_inicial[ingrediente.id] - necesario
+        )
+
+
+def test_pedido_rechazado_no_descontar_stock_insuficiente(app):
+    plato = Plato.query.filter_by(nombre="Hamburguesa clásica").one()
+
+    relacion = plato.ingredientes[0]
+    ingrediente = relacion.ingrediente
+
+    ingrediente.stock = 0
+    db.session.commit()
+
+    stock_inicial = {
+        item.ingrediente.id: item.ingrediente.stock
+        for item in plato.ingredientes
+    }
+
+    with pytest.raises(servicio.ErrorPedido):
+        _pedido(None, ("Hamburguesa clásica", 1))
+
+    db.session.refresh(plato)
+
+    for item in plato.ingredientes:
+        db.session.refresh(item.ingrediente)
+        assert item.ingrediente.stock == stock_inicial[item.ingrediente.id]
+
+    assert plato.disponible is False
+
+
+def test_inventario_rechaza_cantidad_cero(app):
+    plato = Plato.query.filter_by(nombre="Hamburguesa clásica").one()
+
+    with pytest.raises(ErrorInventario):
+        validar_stock(plato, 0)
+
+
+def test_inventario_rechaza_cantidad_negativa(app):
+    plato = Plato.query.filter_by(nombre="Hamburguesa clásica").one()
+
+    with pytest.raises(ErrorInventario):
+        validar_stock(plato, -1)
+
+

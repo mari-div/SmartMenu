@@ -245,3 +245,19 @@ td.vacio-mini { border: 0; }
   .sug-movil::-webkit-scrollbar { display: none; }
   .sug-movil .sug-item { flex: none; border-radius: 999px; background: var(--surface); border-style: solid; box-shadow: var(--shadow); padding: .4rem .9rem; }
 }
+
+/* Analisis: conclusiones y frase "como leerlo" */
+.conclusiones { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1rem 1.2rem; margin-bottom: 1.4rem; }
+.conclusiones h2 { font-family: var(--font-title); font-size: 1.1rem; margin: 0 0 .6rem; }
+.conclusiones ul { margin: 0; padding-left: 1.2rem; display: grid; gap: .35rem; }
+.como-leerlo { margin: .7rem 0 0; font-size: .88rem; color: var(--muted); }
+
+/* Analisis interactivo: filtros, lienzo del grafico y listas de acciones */
+.filtros-int { display: flex; flex-wrap: wrap; gap: .8rem; margin-bottom: .8rem; }
+.filtros-int label { display: grid; gap: .25rem; font-size: .82rem; color: var(--muted); font-weight: 700; }
+.filtros-int select { padding: .5rem .7rem; min-height: 42px; border: 1.5px solid var(--border); border-radius: var(--r-sm); background: var(--bg); color: var(--text); font: inherit; }
+.lienzo-int { position: relative; height: 380px; }
+.listas-acciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.listas-acciones h3 { font-family: var(--font-title); font-size: .98rem; margin: 0 0 .4rem; }
+.listas-acciones ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .25rem; font-size: .9rem; }
+.tabla-pred { margin-top: 1rem; }

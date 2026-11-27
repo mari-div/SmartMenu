@@ -1,10 +1,12 @@
 """Panel de administracion: KPIs, ventas, pedidos, menu, usuarios y bitacora."""
 import re
+
+import pandas as pd
 from datetime import datetime
 
 from flask import Blueprint, Response, abort, jsonify, render_template, request
 
-from analisis import graficos
+from analisis import graficos, metricas
 from app.auth import registrar, rol_requerido, usuario_actual
 from app.extensions import db
 from app.models import Auditoria, Categoria, Ingrediente, Pedido, Plato, Rol, Usuario
@@ -19,6 +21,24 @@ TITULOS_GRAFICOS = {
     "pareto": "Pareto ABC de platos", "tiempos_por_hora": "Tiempos de cocina por hora",
     "matriz_ingenieria_menu": "Matriz de ingeniería del menú",
     "prediccion_demanda": "Predicción de demanda (7 días)",
+}
+
+# Orden de aparicion: primero lo que el administrador mas necesita para decidir
+ORDEN_GRAFICOS = ["matriz_ingenieria_menu", "prediccion_demanda", "pareto", "top_platos",
+                  "ventas_diarias", "ventas_por_dia_semana", "ventas_por_hora", "tiempos_por_hora"]
+
+# Una frase bajo cada grafico que explica como interpretarlo
+COMO_LEERLO = {
+    "matriz_ingenieria_menu": "Cada punto es un plato. Arriba a la derecha están las Estrellas (se venden mucho y ganan bien); "
+                              "abajo a la izquierda, los Perros. Las líneas son las medianas.",
+    "prediccion_demanda": "La línea continua es lo vendido; la discontinua, lo previsto para los próximos 7 días "
+                          "según la tendencia y el día de la semana.",
+    "pareto": "Las barras de la izquierda (clase A) generan el 80% de los ingresos. Conviene cuidar sobre todo esos platos.",
+    "top_platos": "Muestra los platos que más unidades vendieron en el periodo.",
+    "ventas_diarias": "La línea gruesa suaviza los altibajos diarios; la discontinua marca hacia dónde van los ingresos.",
+    "ventas_por_dia_semana": "Ingreso promedio por cada día de la semana. Ayuda a decidir cuánto personal poner cada día.",
+    "ventas_por_hora": "Pedidos por hora del día. Las barras más altas son las horas pico.",
+    "tiempos_por_hora": "Si la espera sube en ciertas horas, la cocina se está saturando a esa hora.",
 }
 
 
@@ -216,9 +236,12 @@ def exportar(tipo: str):
 @SOLO_ADMIN
 def analisis():
     limpio, informe = servicio.cargar_limpio()
+    orden = [g for g in ORDEN_GRAFICOS if g in graficos.GRAFICOS]
+    orden += [g for g in graficos.GRAFICOS if g not in orden]    # un grafico nuevo tambien aparece
+    frases = metricas.conclusiones(limpio) if limpio is not None else []
     return render_template("admin/analisis.html", seccion="analisis", hay_datos=limpio is not None,
-                           informe=informe, graficos=list(graficos.GRAFICOS),
-                           titulos=TITULOS_GRAFICOS)
+                           informe=informe, graficos=orden, titulos=TITULOS_GRAFICOS,
+                           como_leer=COMO_LEERLO, conclusiones=frases)
 
 
 @bp.get("/grafico/<nombre>.png")
@@ -233,3 +256,30 @@ def grafico(nombre: str):
     oscuro = request.args.get("tema") == "oscuro"
     return Response(graficos.a_png(funcion(limpio), oscuro=oscuro, sin_titulo=True),
                     mimetype="image/png")
+
+
+# ---------------------------------------------------------------- datos del analisis interactivo
+def _datos_analisis():
+    """Datos limpios completos y recortados segun ?dias= y ?categoria= de la URL."""
+    limpio, _ = servicio.cargar_limpio()
+    if limpio is None:
+        return pd.DataFrame(), pd.DataFrame()
+    dias = request.args.get("dias", type=int)
+    categoria = request.args.get("categoria") or None
+    return limpio, metricas.filtrar_periodo(limpio, dias, categoria)
+
+
+@bp.get("/api/analisis/matriz")
+@SOLO_ADMIN
+def api_matriz():
+    limpio, df = _datos_analisis()
+    datos = metricas.matriz_para_json(df)
+    datos["categorias"] = sorted(set(limpio["categoria"])) if not limpio.empty else []
+    return jsonify(datos)
+
+
+@bp.get("/api/analisis/prediccion")
+@SOLO_ADMIN
+def api_prediccion():
+    _, df = _datos_analisis()
+    return jsonify(metricas.prediccion_para_json(df, request.args.get("plato")))

@@ -10,14 +10,65 @@
   <span>Datos depurados: <b>{{ informe.pedidos_iniciales }}</b> pedidos leídos → <b>{{ informe.pedidos_cancelados }}</b> cancelados excluidos,
   <b>{{ informe.pedidos_sin_tiempos }}</b> sin marca de tiempo y <b>{{ informe.pedidos_con_tiempo_atipico }}</b> con tiempo atípico descartado →
   <b>{{ informe.pedidos_validos }}</b> pedidos válidos.</span></p>
+{% if conclusiones %}
+<section class="conclusiones" aria-labelledby="t-concl">
+  <h2 id="t-concl">Conclusiones para el administrador</h2>
+  <ul>{% for frase in conclusiones %}<li>{{ frase }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
 <div class="graficos">
-  {% for g in graficos %}
+  <figure class="grafico grande">
+    <figcaption>Matriz de ingeniería del menú <small>(interactiva: pasa el mouse sobre un punto)</small></figcaption>
+    <div class="filtros-int">
+      <label>Periodo
+        <select id="f-dias">
+          <option value="">Todo el historial</option>
+          <option value="7">Últimos 7 días</option>
+          <option value="14">Últimos 14 días</option>
+          <option value="30">Últimos 30 días</option>
+        </select></label>
+      <label>Categoría
+        <select id="f-categoria"><option value="">Todas</option></select></label>
+    </div>
+    <div class="lienzo-int"><canvas id="c-matriz" role="img" aria-label="Matriz de ingeniería del menú: platos según unidades vendidas y margen"></canvas></div>
+    <p class="muted" id="m-estado" role="status"></p>
+    {% if como_leer.get('matriz_ingenieria_menu') %}<p class="como-leerlo">{{ como_leer['matriz_ingenieria_menu'] }}</p>{% endif %}
+    <div class="listas-acciones">
+      <div><h3>Platos a promocionar <small>(Puzzles)</small></h3><ul id="l-promocionar"></ul></div>
+      <div><h3>Platos a retirar o revisar <small>(Perros)</small></h3><ul id="l-retirar"></ul></div>
+    </div>
+  </figure>
+
+  <figure class="grafico grande">
+    <figcaption>Predicción de demanda a 7 días <small>(elige un plato)</small></figcaption>
+    <div class="filtros-int">
+      <label>Plato
+        <select id="f-plato"><option value="">Plato más vendido</option></select></label>
+    </div>
+    <div class="lienzo-int"><canvas id="c-pred" role="img" aria-label="Ventas reales y proyección de los próximos 7 días"></canvas></div>
+    <p class="muted" id="p-estado" role="status"></p>
+    {% if como_leer.get('prediccion_demanda') %}<p class="como-leerlo">{{ como_leer['prediccion_demanda'] }}</p>{% endif %}
+    <div class="tabla-wrap tabla-pred"><table class="tabla">
+      <thead><tr><th>Día</th><th>Previsto</th></tr></thead>
+      <tbody id="t-pred"></tbody></table></div>
+    <p class="muted" id="t-total"></p>
+  </figure>
+</div>
+
+<div class="graficos">
+  {% for g in graficos if g not in ('matriz_ingenieria_menu', 'prediccion_demanda') %}
   <figure class="grafico {{ 'grande' if g in ('pareto','prediccion_demanda','matriz_ingenieria_menu') }}" data-revelar style="--i: {{ loop.index0 }}">
     <figcaption>{{ titulos.get(g, g) }}</figcaption>
     <div class="grafico-marco cargando"><img data-g="{{ g }}" alt="Gráfico: {{ titulos.get(g, g) }}" width="880" height="484"></div>
+    {% if como_leer.get(g) %}<p class="como-leerlo">{{ como_leer[g] }}</p>{% endif %}
   </figure>
   {% endfor %}
 </div>
 {% endif %}
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='js/admin_analisis.js') }}"></script>{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_analisis.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_interactivo.js') }}"></script>
+{% endblock %}

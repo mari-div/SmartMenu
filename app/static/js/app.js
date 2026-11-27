@@ -4,6 +4,19 @@
   const raiz = document.documentElement;
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // Todas las peticiones que modifican datos llevan el token CSRF (lo exige el servidor)
+  const tokenCsrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
+  const fetchOriginal = window.fetch.bind(window);
+  window.fetch = (url, opciones = {}) => {
+    const metodo = (opciones.method || "GET").toUpperCase();
+    if (!["GET", "HEAD", "OPTIONS"].includes(metodo)) {
+      const cabeceras = new Headers(opciones.headers || {});
+      cabeceras.set("X-CSRF-Token", tokenCsrf);
+      opciones = { ...opciones, headers: cabeceras };
+    }
+    return fetchOriginal(url, opciones);
+  };
+
   const SM = {
     reducido,
     dinero: (n) => "S/ " + Number(n).toFixed(2),

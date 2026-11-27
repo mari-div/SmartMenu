@@ -71,3 +71,10 @@ def guardar_cambios_inventario() -> None:
     """Sincroniza los cambios de inventario con la sesión."""
 
     db.session.flush()
+
+
+def reponer_stock(plato: Plato, cantidad: int = 1) -> None:
+    """Devuelve al inventario los ingredientes de un plato (por ejemplo, al cancelar un pedido)."""
+
+    for relacion in plato.ingredientes:
+        relacion.ingrediente.stock = round(relacion.ingrediente.stock + relacion.cantidad * cantidad, 4)

@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#DC2626">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23DC2626%27/%3E%3Cpath d=%27M10 7v6a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2V7M12.5 7v18M22 25V7c-2.4 1.2-3.6 3.6-3.6 6.4V17H22%27 fill=%27none%27 stroke=%27white%27 stroke-width=%272.4%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block titulo %}SmartMenu{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,11 +44,12 @@
         {% endif %}
       </nav>
       {% if usuario %}
-      <div class="usuario-chip" title="{{ usuario.nombre }} · {{ etiqueta_rol }}">
+      <a class="usuario-chip" href="{{ url_for('auth.cuenta') }}" title="Mi cuenta: {{ usuario.nombre }} · {{ etiqueta_rol }}" style="text-decoration:none; color:inherit;">
         <span class="avatar" aria-hidden="true">{{ usuario.nombre[:1] }}</span>
         <span class="usuario-txt"><b>{{ usuario.nombre.split()[0] }}</b><small>{{ etiqueta_rol }}</small></span>
-      </div>
+      </a>
       <form method="post" action="{{ url_for('auth.logout') }}" class="form-salir">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="icon-btn" type="submit" aria-label="Cerrar sesión" title="Cerrar sesión"><svg class="ico"><use href="#i-logout"/></svg></button>
       </form>
       {% else %}

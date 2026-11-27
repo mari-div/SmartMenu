@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import Callable, Iterable
 
+from app.descuentos import DescuentoGrupo, DescuentoVolumen, HappyHour
+
 
 # ---------------------------------------------------------------- datos inmutables
 @dataclass(frozen=True)
@@ -59,25 +61,11 @@ def unidades(lineas: Iterable[Linea]) -> int:
 
 
 # ---------------------------------------------------------------- reglas de descuento
-# Cada regla es una funcion  Contexto -> (porcentaje, nombre).  Es facil agregar mas.
-def happy_hour(ctx: Contexto) -> tuple[float, str]:
-    """15% de descuento entre las 17:00 y las 18:59."""
-    return (0.15, "Happy hour") if 17 <= ctx.hora < 19 else (0.0, "")
-
-
-def descuento_volumen(ctx: Contexto) -> tuple[float, str]:
-    """8% si el subtotal llega a S/ 180, 5% si llega a S/ 100."""
-    if ctx.subtotal >= 180:
-        return 0.08, "Consumo mayor a S/ 180"
-    if ctx.subtotal >= 100:
-        return 0.05, "Consumo mayor a S/ 100"
-    return 0.0, ""
-
-
-def descuento_grupo(ctx: Contexto) -> tuple[float, str]:
-    """10% para grupos de 6 o mas comensales."""
-    return (0.10, "Descuento de grupo") if ctx.comensales >= 6 else (0.0, "")
-
+# Las reglas son OBJETOS (jerarquia en app/descuentos.py) pero se usan como FUNCIONES:
+# cada una es invocable  Contexto -> (porcentaje, nombre).  Asi conviven ambos paradigmas.
+happy_hour = HappyHour()
+descuento_volumen = DescuentoVolumen()
+descuento_grupo = DescuentoGrupo()
 
 REGLAS_POR_DEFECTO = (happy_hour, descuento_volumen, descuento_grupo)
 

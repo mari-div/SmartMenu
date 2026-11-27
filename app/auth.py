@@ -1,4 +1,5 @@
 """Autenticacion por sesion, control de acceso por rol y bitacora de auditoria."""
+import secrets
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -34,6 +35,32 @@ def iniciar_sesion(usuario: Usuario) -> None:
 def cerrar_sesion() -> None:
     session.clear()
     request.environ[_CLAVE] = None
+
+
+# ---------------------------------------------------------------- proteccion CSRF
+# Un sitio malicioso no puede leer este token, asi que no puede fabricar un POST valido
+# en nombre del usuario. Va en la sesion y debe regresar en el encabezado X-CSRF-Token
+# (el JS lo agrega solo) o en el campo oculto "csrf_token" de los formularios.
+METODOS_SEGUROS = {"GET", "HEAD", "OPTIONS"}
+
+
+def csrf_token() -> str:
+    if "csrf" not in session:
+        session["csrf"] = secrets.token_hex(16)
+    return session["csrf"]
+
+
+def verificar_csrf():
+    """before_request: rechaza los POST/PUT/PATCH/DELETE sin el token correcto."""
+    if request.method in METODOS_SEGUROS:
+        return None
+    enviado = request.headers.get("X-CSRF-Token") or request.form.get("csrf_token") or ""
+    esperado = session.get("csrf", "")
+    if not esperado or not secrets.compare_digest(enviado, esperado):
+        if request.path.startswith("/api/") or "/api/" in request.path:
+            return jsonify(error="Sesión inválida o vencida: recarga la página"), 403
+        return render_template("403.html"), 403
+    return None
 
 
 # ---------------------------------------------------------------- bitacora

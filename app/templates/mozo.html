@@ -19,6 +19,11 @@
   <div class="alertas-lista" id="lista-listos"></div>
 </section>
 
+<section id="avisos" class="avisos-cliente" aria-live="assertive" aria-label="Clientes que te llaman" hidden>
+  <h2><svg class="ico"><use href="#i-hand"/></svg> Clientes te llaman <span class="contador" id="c-avisos">0</span></h2>
+  <div id="lista-avisos"></div>
+</section>
+
 <div class="mozo-grid">
   <section aria-labelledby="h-mesas">
     <h2 id="h-mesas">Mesas</h2>
@@ -28,6 +33,10 @@
   <section aria-labelledby="h-curso">
     <h2 id="h-curso">Mis pedidos en curso <span class="contador" id="c-curso">0</span></h2>
     <div class="curso-lista" id="lista-curso"></div>
+
+    <h2 id="h-cobrar" style="margin-top:1.6rem;">Por cobrar <span class="contador" id="c-cobrar">0</span></h2>
+    <p class="muted">Pedidos entregados: al cobrar se libera la mesa.</p>
+    <div class="cobro-lista" id="lista-cobrar"></div>
   </section>
 </div>
 {% endblock %}

@@ -39,6 +39,40 @@
     </div>
   </section>
 
+  <section class="cliente-acciones" id="acciones" hidden aria-label="Avisar al personal">
+    <div class="fila-botones">
+      <button class="btn btn-ghost" id="btn-mozo" type="button"><svg class="ico"><use href="#i-hand"/></svg><span>Llamar al mozo</span></button>
+      <button class="btn btn-primary" id="btn-cuenta" type="button" hidden><svg class="ico"><use href="#i-receipt"/></svg><span>Pedir la cuenta</span></button>
+    </div>
+    <p class="muted peq" id="acciones-estado" aria-live="polite"></p>
+  </section>
+
+  <section class="cuenta-card" id="card-cuenta" hidden aria-labelledby="h-dividir">
+    <h2 id="h-dividir"><svg class="ico"><use href="#i-cash"/></svg> Dividir la cuenta</h2>
+    <div class="campo"><label for="personas">¿Entre cuántas personas?</label>
+      <div class="campo-num">
+        <button type="button" id="per-menos" aria-label="Menos personas"><svg class="ico"><use href="#i-minus"/></svg></button>
+        <input type="number" id="personas" min="1" max="30" value="1" inputmode="numeric">
+        <button type="button" id="per-mas" aria-label="Más personas"><svg class="ico"><use href="#i-plus"/></svg></button>
+      </div></div>
+    <div class="chips-propina" role="group" aria-label="Propina">
+      <button type="button" class="chip" data-propina="0" aria-pressed="true">Sin propina</button>
+      <button type="button" class="chip" data-propina="0.05" aria-pressed="false">5 %</button>
+      <button type="button" class="chip" data-propina="0.1" aria-pressed="false">10 %</button>
+      <button type="button" class="chip" data-propina="0.15" aria-pressed="false">15 %</button>
+    </div>
+    <div class="partes" id="partes" aria-live="polite"></div>
+  </section>
+
+  <section class="cuenta-card" id="card-calificar" hidden aria-labelledby="h-calif">
+    <h2 id="h-calif"><svg class="ico"><use href="#i-star"/></svg> ¿Cómo estuvo tu experiencia?</h2>
+    <div class="estrellas" id="estrellas" role="group" aria-label="Calificación de 1 a 5 estrellas"></div>
+    <textarea id="comentario" maxlength="255" rows="2" placeholder="Cuéntanos más (opcional)" aria-label="Comentario"></textarea>
+    <p class="error" id="error-calif" role="alert" hidden></p>
+    <button class="btn btn-primary btn-block" id="enviar-calif" type="button" disabled>Enviar opinión</button>
+  </section>
+  <p class="gracias" id="gracias" hidden></p>
+
   <p class="muted centrado">¿Necesitas algo más? Llama a tu mozo, con gusto te atenderá.</p>
 </div>
 {% endblock %}

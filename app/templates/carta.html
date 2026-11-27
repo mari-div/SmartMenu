@@ -6,7 +6,8 @@
 <div class="carta-cab">
   <div>
     <a class="volver" href="{{ url_for('mozo.panel') }}"><svg class="ico"><use href="#i-arrow"/></svg> Volver a mesas</a>
-    <p class="eyebrow"><svg class="ico"><use href="#i-table"/></svg> Tomando pedido · Mesa {{ mesa.numero }}</p>
+    <p class="eyebrow"><svg class="ico"><use href="#i-table"/></svg>
+      {% if pedido_destino %}Agregando al pedido #{{ pedido_destino.id }}{% else %}Tomando pedido{% endif %} · Mesa {{ mesa.numero }}</p>
     <h1>Carta</h1>
   </div>
 </div>
@@ -20,12 +21,12 @@
       {% endfor %}
     </div>
 
-    <div id="menu" data-url="{{ url_for('mozo.tomar_pedido', mesa_id=mesa.id) }}">
+    <div id="menu" data-url="{{ url_for('mozo.tomar_pedido', mesa_id=mesa.id) }}{% if pedido_destino %}?pedido={{ pedido_destino.id }}{% endif %}">
       {% include "_secciones.html" %}
     </div>
   </section>
 
-  <aside class="carrito" id="carrito" data-mesa-id="{{ mesa.id }}" aria-label="Tu pedido">
+  <aside class="carrito" id="carrito" data-mesa-id="{{ mesa.id }}" {% if pedido_destino %}data-pedido-id="{{ pedido_destino.id }}"{% endif %} aria-label="Tu pedido">
     <div class="carrito-cab">
       <h2><svg class="ico"><use href="#i-receipt"/></svg> Tu pedido</h2>
       <button type="button" class="icon-btn solo-movil" id="cerrar-carrito" aria-label="Cerrar pedido"><svg class="ico"><use href="#i-x"/></svg></button>
@@ -36,6 +37,11 @@
       <p>Tu pedido está vacío.<br><span class="muted">Agrega platos de la carta.</span></p>
     </div>
     <ul id="lista-carrito" class="lista-carrito"></ul>
+
+    <div class="sugerencias" id="sugerencias" hidden aria-live="polite">
+      <p class="sug-titulo"><svg class="ico"><use href="#i-lightbulb"/></svg> Te puede gustar</p>
+      <div class="sug-lista" id="sug-lista"></div>
+    </div>
 
     <div class="totales" id="totales" hidden>
       <div class="fila"><span>Subtotal</span><span id="t-subtotal">S/ 0.00</span></div>
@@ -54,18 +60,19 @@
         <button type="button" id="com-mas" aria-label="Más comensales"><svg class="ico"><use href="#i-plus"/></svg></button>
       </div>
     </div>
-    <div class="campo">
+    <div class="campo" {% if pedido_destino %}hidden{% endif %}>
       <label for="notas">Notas para la cocina</label>
       <textarea id="notas" maxlength="255" rows="2" placeholder="Ej.: sin cebolla, bien cocido…"></textarea>
     </div>
     <p class="error" id="error" role="alert" hidden></p>
     <button class="btn btn-primary btn-block btn-lg" id="enviar" type="button" disabled>
-      <span class="btn-texto">Enviar a cocina</span>
+      <span class="btn-texto">{% if pedido_destino %}Agregar al pedido{% else %}Enviar a cocina{% endif %}</span>
       <span class="spinner" aria-hidden="true"></span>
     </button>
   </aside>
 </div>
 
+<div class="sug-movil" id="sug-movil" hidden aria-label="Te puede gustar"></div>
 <button type="button" class="barra-carrito" id="barra-carrito" hidden aria-controls="carrito" aria-expanded="false">
   <span class="barra-carrito-n"><svg class="ico"><use href="#i-bag"/></svg><b id="bc-n">0</b></span>
   <span class="barra-carrito-t">Ver pedido</span>

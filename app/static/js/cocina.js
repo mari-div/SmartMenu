@@ -31,6 +31,9 @@
 
   function claseReloj(min) { return min >= 12 ? "alto" : min >= 6 ? "medio" : ""; }
 
+  // Identifica el contenido del pedido: si cambia (el mozo agrego platos) la tarjeta se rehace
+  const firma = (p) => JSON.stringify([p.items, p.notas]);
+
   function crear(p, columna) {
     const [textoBoton, icoBoton] = COLUMNAS[columna].boton;
     const reloj = el("span", { class: "reloj" }, icono("clock"), el("span", { class: "min" }));
@@ -66,6 +69,7 @@
       acciones.append(cancelar);
     }
     t.append(acciones);
+    t.dataset.firma = firma(p);
     return t;
   }
 
@@ -95,6 +99,11 @@
 
     pedidos.forEach((p, i) => {                              // crear/actualizar y ordenar
       let nodo = existentes.get(String(p.id));
+      if (nodo && nodo.dataset.firma !== firma(p)) {
+        const nuevo = crear(p, columna);
+        nodo.replaceWith(nuevo); nodo = nuevo;
+        if (!primeraCarga) toast(`Mesa ${p.mesa}: el pedido #${p.id} cambió (se agregaron platos)`, "info", 6000);
+      }
       if (!nodo) nodo = crear(p, columna);
       actualizar(nodo, p, i === 0, columna);
       const referencia = lista.children[i];

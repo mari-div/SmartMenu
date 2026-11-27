@@ -1,35 +1,41 @@
-# Reparto de tareas
+# Estado del proyecto
 
-Entrega final: **semana 17**. Avance: **viernes 13**.
-Cada quien trabaja en su rama (`mari/...`, `leslie/...`, `leopoldo/...`) y abre Pull Request a `main`.
+Entrega final: **semana 17**. Avance entregado: viernes 13 de noviembre.
 
-## Hecho (base del avance)
-- Modelos POO, máquina de estados del pedido, esquema de base de datos
-- Funciones puras: precios/descuentos, prioridad de cocina, filtros dietéticos
-- Carta con carrito, seguimiento del pedido, panel de cocina
-- Generador de datos, limpieza con pandas, métricas, 6 gráficos, dashboard
-- 54 pruebas automáticas
+## Hecho
 
-## Leslie: análisis de datos (pandas / numpy)
-Archivos: `analisis/metricas.py`, `analisis/graficos.py`, `tests/test_analisis.py`
-1. **Matriz de ingeniería de menú**: clasificar cada plato en estrella / vaca / puzzle / perro según popularidad y margen (usa `top_platos` como base).
-2. **Predicción de demanda**: media móvil o regresión con `np.polyfit` para proyectar ventas de los próximos 7 días por plato.
-3. Gráficos nuevos para 1 y 2, y agregarlos a `GRAFICOS` en `graficos.py` (aparecen solos en el dashboard).
+| Área | Qué hay | Quién |
+|---|---|---|
+| Base y arquitectura | Modelos POO, funciones puras, servicios, API Flask, interfaz | Leopoldo |
+| Roles y seguridad | Login por rol, permisos, bitácora, bloqueo de intentos, **CSRF**, cambio de contraseña | Leopoldo |
+| Flujo completo | Mozo → cocina → alerta → entrega → cobro; QR y seguimiento del cliente | Leopoldo |
+| POO | Reglas de descuento como jerarquía de clases (herencia y polimorfismo) | Leopoldo |
+| Cliente | Llamar al mozo, pedir la cuenta, dividir la cuenta con propina, calificar | Leopoldo |
+| Mozo | Agregar platos a un pedido abierto, cobrar con método y propina, sugerencias | Leopoldo |
+| Inventario | Descuento automático, reposición al cancelar, alertas de stock bajo | Mari / Leopoldo |
+| Recomendador | Co-ocurrencia con NumPy, endpoint y sugerencias en la carta | Mari |
+| Análisis | Limpieza, métricas, matriz de menú, predicción de demanda, Pareto | Leslie |
+| Panel admin | KPIs, gráficos, usuarios, menú, bitácora, exportación CSV | Leopoldo |
+| Tiempos | Estimación que aprende del historial real por hora | Leopoldo |
+| Pruebas | **182 pruebas** automáticas (137 funciones) | todos |
+| Documentación | README, capturas documentadas, borrador del informe | todos |
 
-## Mari: lógica inteligente (funcional)
-Archivos nuevos en `app/funcional/` y `app/servicios/`
-1. **Recomendador**: matriz de co-ocurrencia de platos con numpy ("quien pidió X también pidió Y"); función pura `recomendar(plato_id, matriz, n)` y mostrarlo en la carta al agregar un plato. El generador ya simula afinidades (hamburguesa + papas + gaseosa), así que hay señal real.
-2. **Tiempo estimado dinámico**: mejorar `estimar_minutos_entrega` usando los tiempos reales históricos por plato y hora.
-3. **Inventario**: descontar ingredientes (`PlatoIngrediente.cantidad`) al hacer pedidos y marcar platos no disponibles cuando falte stock.
+## Pendiente para la entrega final
 
-## Leopoldo: integración, cliente y entrega
-1. Código **QR** por mesa y seguimiento en tiempo real para el cliente
-2. **Dividir cuenta** y propina en la pantalla del pedido (la lógica ya está en `precios.py`)
-3. Conexión con PostgreSQL, revisión de PRs, pruebas de integración
-4. Informe, presentación y ensayo de la exposición (todos participan)
+1. **Informe final**: completar y revisar `docs/INFORME.md` (portada, nombres, docente, fuentes). Cada integrante redacta su sección.
+2. **Probar con PostgreSQL real** (hasta ahora se probó con SQLite) y el QR en un celular en la red local.
+3. **Ensayar la exposición**: cada integrante explica sus módulos y se ensaya la demo (`flask --app run preparar-demo`).
+4. Validar el análisis con **datos reales** de un restaurante (hoy son simulados).
+
+## Ideas si sobra tiempo
+
+- Actualizaciones en vivo con SSE o WebSockets en lugar de consultar cada 3 s.
+- Gestión de mesas y categorías desde el admin.
+- Impresión de comandas para la cocina.
 
 ## Reglas del equipo
-- Toda función nueva de lógica va con prueba en `tests/` (`python -m pytest` debe pasar antes del PR)
-- Funciones puras en `app/funcional/` (sin base de datos); clases en `app/models/`
-- Comentar el código en español y explicar el *por qué*
-- Cada quien debe poder explicar en la exposición lo que hizo
+
+- Toda función nueva de lógica va con prueba en `tests/` (`python -m pytest` debe pasar antes del PR).
+- Funciones puras en `app/funcional/` (sin base de datos); clases en `app/models/` y `app/descuentos.py`.
+- Comentar el código en español y explicar el *por qué*.
+- Cada quien debe poder explicar en la exposición lo que hizo.

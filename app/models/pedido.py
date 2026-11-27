@@ -35,6 +35,10 @@ ESTADOS_ACTIVOS = (EstadoPedido.PENDIENTE.value, EstadoPedido.EN_PREPARACION.val
                    EstadoPedido.LISTO.value)
 
 
+METODOS_PAGO = ("efectivo", "tarjeta", "yape", "plin")
+TIPOS_AVISO = {"mozo": "Llamar al mozo", "cuenta": "Pedir la cuenta"}
+
+
 class TransicionInvalida(ValueError):
     """Se intento un cambio de estado que no esta permitido."""
 
@@ -81,6 +85,16 @@ class Pedido(db.Model):
     listo_en = db.Column(db.DateTime)
     entregado_en = db.Column(db.DateTime)
 
+    # Cobro y cierre de mesa
+    pagado_en = db.Column(db.DateTime, index=True)
+    metodo_pago = db.Column(db.String(20))
+    propina = db.Column(db.Numeric(10, 2, asdecimal=False), nullable=False, default=0)
+
+    # Opinion del cliente (desde el QR)
+    calificacion = db.Column(db.Integer)                 # 1 a 5 estrellas
+    comentario_cliente = db.Column(db.String(255))
+    calificado_en = db.Column(db.DateTime)
+
     mesa = db.relationship("Mesa", back_populates="pedidos")
     mozo = db.relationship("Usuario", foreign_keys=[mozo_id])
     items = db.relationship("ItemPedido", back_populates="pedido",
@@ -90,6 +104,15 @@ class Pedido(db.Model):
     @property
     def estado_enum(self) -> EstadoPedido:
         return EstadoPedido(self.estado)
+
+    @property
+    def pagado(self) -> bool:
+        return self.pagado_en is not None
+
+    @property
+    def por_cobrar(self) -> bool:
+        """Entregado pero todavia sin cobrar: la mesa sigue ocupada."""
+        return self.estado == EstadoPedido.ENTREGADO.value and not self.pagado
 
     @property
     def unidades(self) -> int:
@@ -146,3 +169,23 @@ class ItemPedido(db.Model):
     @property
     def importe(self) -> float:
         return round(self.precio_unitario * self.cantidad, 2)
+
+
+class Aviso(db.Model):
+    """El cliente avisa desde su QR: 'llamar al mozo' o 'pedir la cuenta'."""
+    __tablename__ = "avisos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    pedido_id = db.Column(db.Integer, db.ForeignKey("pedidos.id"), nullable=False, index=True)
+    tipo = db.Column(db.String(10), nullable=False)               # "mozo" | "cuenta"
+    creado_en = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    atendido_en = db.Column(db.DateTime)
+
+    pedido = db.relationship("Pedido", backref="avisos")
+
+    @property
+    def pendiente(self) -> bool:
+        return self.atendido_en is None
+
+    def atender(self, ahora: datetime | None = None) -> None:
+        self.atendido_en = ahora or datetime.now()

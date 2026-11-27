@@ -1,7 +1,7 @@
 """Inicio y cierre de sesion; cada rol aterriza en su propio panel."""
 from urllib.parse import urlparse
 
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
 from app import auth
 from app.funcional.permisos import ruta_inicio
@@ -51,3 +51,30 @@ def logout():
         auth.registrar("LOGOUT", "", usuario=usuario)
     auth.cerrar_sesion()
     return redirect(url_for("cliente.inicio"))
+
+
+@bp.get("/cuenta")
+@auth.login_requerido
+def cuenta():
+    return render_template("cuenta.html")
+
+
+@bp.post("/api/cuenta/clave")
+@auth.login_requerido
+def cambiar_clave():
+    """Cada usuario cambia su propia contraseña (debe conocer la actual)."""
+    datos = request.get_json(silent=True) or {}
+    usuario = auth.usuario_actual()
+    actual, nueva = str(datos.get("actual", "")), str(datos.get("nueva", ""))
+    if not usuario.check_password(actual):
+        auth.registrar("CLAVE_RECHAZADA", "Contraseña actual incorrecta")
+        return jsonify(error="La contraseña actual no es correcta"), 400
+    if len(nueva) < 8:
+        return jsonify(error="La nueva contraseña debe tener al menos 8 caracteres"), 400
+    if nueva == actual:
+        return jsonify(error="La nueva contraseña debe ser distinta a la actual"), 400
+    usuario.set_password(nueva)
+    from app.extensions import db
+    db.session.commit()
+    auth.registrar("CLAVE_CAMBIADA", "El usuario cambió su propia contraseña")
+    return jsonify(ok=True)

@@ -191,3 +191,106 @@ def tiempos_por_hora(df: pd.DataFrame) -> pd.DataFrame:
                     preparacion=("prep_real_min", "mean"),
                     pedidos=("pedido_id", "count"))
                .reset_index())
+
+def _nombres(serie: pd.Series, maximo: int = 3) -> str:
+    """'A, B y C' (y 'y N más' si hay más de `maximo`)."""
+    lista = serie.tolist()
+    texto = ", ".join(lista[:maximo])
+    return texto + (f" y {len(lista) - maximo} más" if len(lista) > maximo else "")
+
+
+def conclusiones(df: pd.DataFrame) -> list[str]:
+    """Hallazgos principales en frases, calculados con los mismos datos de los gráficos.
+
+    Sirven para que el administrador no tenga que interpretar cada gráfico:
+    el sistema le dice qué mantener, qué promocionar y qué revisar.
+    """
+    if df.empty:
+        return []
+    frases = []
+
+    # 1. Ingeniería de menú: qué hacer con cada grupo de platos
+    matriz = matriz_ingenieria_menu(df)
+    for clase, texto in [("Estrella", "Mantener y destacar en la carta (Estrellas)"),
+                         ("Puzzle", "Promocionar: dejan buen margen pero se piden poco (Puzzles)"),
+                         ("Vaca", "Mejorar precio o costo: se venden mucho pero ganan poco (Vacas)"),
+                         ("Perro", "Revisar o retirar: ni se venden ni ganan (Perros)")]:
+        grupo = matriz.loc[matriz["clasificacion"] == clase, "plato"]
+        if not grupo.empty:
+            frases.append(f"{texto}: {_nombres(grupo)}.")
+
+    # 2. Pareto: pocos platos generan casi todo el ingreso
+    pareto = pareto_platos(df)
+    n_a = int((pareto["clase"] == "A").sum())
+    frases.append(f"{n_a} de {len(pareto)} platos generan el 80% de los ingresos (clase A del Pareto).")
+
+    # 3. Día y hora de mayor movimiento
+    dias = ventas_por_dia_semana(df)
+    mejor_dia = dias.loc[dias["ingreso_prom_dia"].idxmax()]
+    frases.append(f"El día con más ingreso promedio es {mejor_dia['nombre_dia']} "
+                  f"(S/ {mejor_dia['ingreso_prom_dia']:,.0f}).")
+    horas = ventas_por_hora(df)
+    pico = horas.loc[horas["pedidos"].idxmax()]
+    frases.append(f"La hora pico es a las {int(pico['hora'])}:00, con {int(pico['pedidos'])} pedidos en el periodo.")
+
+    # 4. Qué plato se espera más en los próximos 7 días
+    pred = prediccion_demanda(df, dias=7)
+    if not pred.empty:
+        total = pred.groupby("plato")["unidades_predichas"].sum().sort_values(ascending=False)
+        frases.append(f"Próximos 7 días: se espera más demanda de {total.index[0]} "
+                      f"(unas {int(total.iloc[0])} unidades).")
+    return frases
+
+# ------------------------------------------------------------------ datos para el panel interactivo
+def filtrar_periodo(df: pd.DataFrame, dias: int | None = None,
+                    categoria: str | None = None) -> pd.DataFrame:
+    """Recorta los datos a los últimos `dias` (contados desde la última venta) y/o a una categoría."""
+    if df.empty:
+        return df
+    if dias:
+        limite = df["creado_en"].max() - pd.Timedelta(days=dias)
+        df = df[df["creado_en"] > limite]
+    if categoria:
+        df = df[df["categoria"] == categoria]
+    return df
+
+
+def matriz_para_json(df: pd.DataFrame) -> dict:
+    """La matriz de ingeniería de menú lista para enviarse al navegador."""
+    vacio = {"platos": [], "mediana_unidades": 0, "mediana_margen": 0}
+    if df.empty:
+        return vacio
+    matriz = matriz_ingenieria_menu(df)
+    if matriz.empty:
+        return vacio
+    return {
+        "mediana_unidades": float(matriz["mediana_unidades"].iloc[0]),
+        "mediana_margen": round(float(matriz["mediana_margen"].iloc[0]), 2),
+        "platos": [{"plato": f.plato, "categoria": f.categoria, "unidades": int(f.unidades),
+                    "ingresos": round(float(f.ingresos), 2), "margen": round(float(f.margen), 2),
+                    "clasificacion": f.clasificacion}
+                   for f in matriz.itertuples()],
+    }
+
+
+def prediccion_para_json(df: pd.DataFrame, plato: str | None = None, dias: int = 7) -> dict:
+    """Historial y proyección de un plato (por defecto el más vendido), listos para el navegador."""
+    vacio = {"platos": [], "plato": None, "historial": [], "prediccion": []}
+    if df.empty:
+        return vacio
+    pred = prediccion_demanda(df, dias=dias)
+    platos = top_platos(df, n=df["plato"].nunique())["plato"].tolist()    # del más al menos vendido
+    if pred.empty or not platos:
+        return vacio
+    if plato not in platos:
+        plato = platos[0]
+    historial = df[df["plato"] == plato].groupby("fecha")["cantidad"].sum().sort_index()
+    futuro = pred[pred["plato"] == plato]
+    return {
+        "platos": platos,
+        "plato": plato,
+        "historial": [{"fecha": f.strftime("%Y-%m-%d"), "unidades": int(u)}
+                      for f, u in historial.items()],
+        "prediccion": [{"fecha": f.strftime("%Y-%m-%d"), "unidades": int(u)}
+                       for f, u in zip(futuro["fecha"], futuro["unidades_predichas"])],
+    }

@@ -171,3 +171,18 @@ def test_prediccion_demanda_genera_siete_dias():
     assert resultado["unidades_predichas"].ge(0).all()
     assert resultado["fecha"].min() == pd.Timestamp("2026-11-05")
     assert resultado["fecha"].max() == pd.Timestamp("2026-11-11")
+
+
+def test_conclusiones_resume_los_hallazgos(limpio):
+    df, _ = limpio
+    frases = metricas.conclusiones(df)
+    texto = " ".join(frases)
+
+    assert len(frases) >= 5
+    assert "Pareto" in texto
+    assert "hora pico" in texto
+    assert "Próximos 7 días" in texto
+
+
+def test_conclusiones_sin_datos_devuelve_lista_vacia():
+    assert metricas.conclusiones(pd.DataFrame()) == []

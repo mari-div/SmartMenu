@@ -140,9 +140,25 @@ def crear_pedido(mesa: Mesa, items: list[dict], comensales: int = 1, notas: str 
         db.session.commit()
         return pedido
 
+   
     except ErrorInventario as error:
         db.session.rollback()
-        raise ErrorPedido(str(error))
+
+        mensaje = str(error)
+
+        # Identificar los platos que tienen stock insuficiente.
+        for plato, cantidad, _ in lineas:
+            try:
+                validar_stock(plato, cantidad)
+            except ErrorInventario:
+                plato_actual = db.session.get(Plato, plato.id)
+
+                if plato_actual is not None:
+                    plato_actual.disponible = False
+
+        db.session.commit()
+        raise ErrorPedido(mensaje)
+
     except Exception:
         db.session.rollback()
         raise

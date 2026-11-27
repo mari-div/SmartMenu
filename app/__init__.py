@@ -11,7 +11,7 @@ def create_app(config_class=Config) -> Flask:
     db.init_app(app)
 
     from . import models  # noqa: F401  (registra las tablas)
-    from .auth import usuario_actual
+    from .auth import csrf_token, usuario_actual, verificar_csrf
     from .cli import registrar_comandos
     from .models import ETIQUETA_ROL
     from .rutas import admin, api, auth, cliente, cocina, mozo
@@ -19,6 +19,8 @@ def create_app(config_class=Config) -> Flask:
     for modulo in (cliente, auth, mozo, cocina, api, admin):
         app.register_blueprint(modulo.bp)
     registrar_comandos(app)
+    app.jinja_env.globals["csrf_token"] = csrf_token
+    app.before_request(verificar_csrf)
 
     @app.context_processor
     def datos_comunes():

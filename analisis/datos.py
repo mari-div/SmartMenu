@@ -12,6 +12,11 @@ CONSULTA_VENTAS = text("""
            p.subtotal        AS subtotal_pedido,
            p.descuento       AS descuento_pedido,
            p.total           AS total_pedido,
+           p.propina,
+           p.metodo_pago,
+           p.pagado_en,
+           p.calificacion,
+           p.comentario_cliente,
            p.creado_en,
            p.inicio_prep_en,
            p.listo_en,
@@ -30,7 +35,7 @@ CONSULTA_VENTAS = text("""
     LEFT JOIN usuarios u ON u.id = p.mozo_id
 """)
 
-COLUMNAS_FECHA = ["creado_en", "inicio_prep_en", "listo_en", "entregado_en"]
+COLUMNAS_FECHA = ["creado_en", "inicio_prep_en", "listo_en", "entregado_en", "pagado_en"]
 
 
 def cargar_ventas(engine) -> pd.DataFrame:

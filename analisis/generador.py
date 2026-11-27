@@ -110,6 +110,7 @@ def generar_historial(dias: int = 45, pedidos_base: int = 55, semilla: int = 42,
             pedido.items = [ItemPedido(plato=p, cantidad=c, precio_unitario=p.precio)
                             for p, c in lineas]
             _simular_tiempos(rng, pedido, int(hora), peso_max)
+            _simular_cierre(rng, pedido)
             db.session.add(pedido)
             creados += 1
         db.session.commit()
@@ -135,3 +136,37 @@ def _simular_tiempos(rng, pedido: Pedido, hora: int, peso_max: float) -> None:
         pedido.listo_en = None
     elif suerte < 0.015:                                        # error de registro absurdo
         pedido.listo_en = pedido.inicio_prep_en + timedelta(minutes=prep * 8)
+
+
+METODOS = (["efectivo", "tarjeta", "yape", "plin"], [0.38, 0.27, 0.27, 0.08])
+PROPINAS = ([0.0, 0.05, 0.10, 0.15], [0.50, 0.12, 0.28, 0.10])
+COMENTARIOS_BUENOS = ["Todo riquísimo", "Muy buena atención", "Llegó caliente y rápido", "Volveremos pronto", "Excelente sabor"]
+COMENTARIOS_MALOS = ["Se demoró bastante", "El plato llegó tibio", "Faltó atención", "Esperamos mucho la cuenta"]
+
+
+def _simular_cierre(rng, pedido: Pedido) -> None:
+    """Pedidos entregados: se cobran (con metodo y propina) y algunos clientes los califican.
+
+    La calificacion depende de cuanto espero el cliente: a mas demora, peores notas.
+    """
+    if pedido.estado != "entregado" or pedido.entregado_en is None:
+        return
+    pedido.pagado_en = pedido.entregado_en + timedelta(minutes=float(rng.uniform(5, 40)))
+    pedido.metodo_pago = str(rng.choice(METODOS[0], p=METODOS[1]))
+    pedido.propina = round(float(pedido.total) * float(rng.choice(PROPINAS[0], p=PROPINAS[1])), 2)
+
+    if rng.random() < 0.35:                                       # no todos califican
+        espera = (pedido.entregado_en - pedido.creado_en).total_seconds() / 60
+        if espera < 22:
+            probs = [0.02, 0.03, 0.10, 0.30, 0.55]
+        elif espera < 35:
+            probs = [0.03, 0.07, 0.20, 0.35, 0.35]
+        else:
+            probs = [0.15, 0.25, 0.30, 0.20, 0.10]
+        estrellas = int(rng.choice([1, 2, 3, 4, 5], p=probs))
+        pedido.calificacion = estrellas
+        pedido.calificado_en = pedido.pagado_en
+        if rng.random() < 0.3:
+            frases = COMENTARIOS_BUENOS if estrellas >= 4 else COMENTARIOS_MALOS if estrellas <= 2 else []
+            if frases:
+                pedido.comentario_cliente = frases[int(rng.integers(len(frases)))]

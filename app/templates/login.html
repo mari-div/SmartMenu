@@ -9,6 +9,7 @@
     <p class="muted">Acceso del personal: mozos, cocina y administración.</p>
 
     <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="campo">
         <label for="username">Usuario</label>
         <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none"

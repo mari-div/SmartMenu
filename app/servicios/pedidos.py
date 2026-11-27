@@ -11,9 +11,11 @@ from app.models import (ESTADOS_ACTIVOS, EstadoPedido, ItemPedido, Mesa, Pedido,
                         Usuario)
 
 # ---------------------------------------------------------------- inventario
+from app.servicios import tiempos
 from app.servicios.inventario import (
     ErrorInventario,
     descontar_stock,
+    reponer_stock,
     validar_stock,
 )
 
@@ -80,13 +82,14 @@ def estimar_pedido(pedido: Pedido, ahora: datetime | None = None) -> float:
     estado = pedido.estado_enum
     if estado in (EstadoPedido.LISTO, EstadoPedido.ENTREGADO, EstadoPedido.CANCELADO):
         return 0.0
-    propio = pedido.tiempo_prep_min
+    factor = tiempos.factor_para(ahora.hour, ahora)       # la cocina real vs la estimada (historial)
+    propio = pedido.tiempo_prep_min * factor
     if estado is EstadoPedido.EN_PREPARACION:
         transcurrido = (ahora - pedido.inicio_prep_en).total_seconds() / 60
         return round(max(0.0, propio - transcurrido), 1)
     # Pendiente: se suma la carga de lo que esta en preparacion y de los pedidos mas antiguos
     por_delante = [
-        p.tiempo_prep_min
+        p.tiempo_prep_min * factor
         for p in _pedidos_activos((EstadoPedido.PENDIENTE.value, EstadoPedido.EN_PREPARACION.value))
         if p.id != pedido.id and (p.estado == EstadoPedido.EN_PREPARACION.value
                                   or p.creado_en <= pedido.creado_en)
@@ -158,6 +161,11 @@ def pedido_a_dict(p: Pedido, ahora: datetime | None = None) -> dict:
         "mozo": p.mozo.nombre if p.mozo else "",
         "listo_hace_min": round((ahora - p.listo_en).total_seconds() / 60, 1) if p.listo_en and p.estado == "listo" else None,
         "estado": p.estado,
+        "mesa_id": p.mesa_id,
+        "pagado": p.pagado,
+        "por_cobrar": p.por_cobrar,
+        "metodo_pago": p.metodo_pago,
+        "propina": p.propina,
         "comensales": p.comensales,
         "notas": p.notas,
         "subtotal": p.subtotal,
@@ -197,25 +205,79 @@ def cola_cocina(ahora: datetime | None = None) -> dict:
 def pedido_publico_dict(p: Pedido, ahora: datetime | None = None) -> dict:
     """Lo que ve el cliente al escanear su QR: sin ids internos ni datos del personal."""
     d = pedido_a_dict(p, ahora)
-    return {k: d[k] for k in ("mesa", "mozo", "estado", "total", "descuento", "creado_en",
-                              "minutos_estimados", "items")}
+    publico = {k: d[k] for k in ("mesa", "mozo", "estado", "total", "descuento", "creado_en",
+                                 "minutos_estimados", "items", "pagado")}
+    publico["avisos_pendientes"] = [a.tipo for a in p.avisos if a.pendiente]
+    publico["calificacion"] = p.calificacion
+    publico["puede_calificar"] = p.estado == "entregado" and p.calificacion is None
+    publico["puede_pedir_cuenta"] = p.estado == "entregado" and not p.pagado
+    return publico
 
 
 # ---------------------------------------------------------------- panel del mozo
 def panel_mozo(mozo: Usuario, ahora: datetime | None = None) -> dict:
-    """Mesas con su estado y los pedidos activos del mozo (los LISTOS van primero)."""
+    """Mesas con su estado, pedidos en curso (los LISTOS primero), cuentas por cobrar y avisos de clientes."""
+    from app.servicios import avisos as servicio_avisos
+
     ahora = ahora or datetime.now()
     activos = _pedidos_activos()
-    por_mesa: dict[int, Pedido] = {}
-    for p in activos:                                   # el mas reciente por mesa
-        por_mesa[p.mesa_id] = p
+    por_cobrar_todos = Pedido.query.filter(Pedido.estado == "entregado",
+                                           Pedido.pagado_en.is_(None)).order_by(Pedido.entregado_en).all()
+    ocupacion: dict[int, str] = {}
+    for p in por_cobrar_todos:                              # primero lo menos urgente...
+        ocupacion[p.mesa_id] = "por_cobrar"
+    for p in activos:                                       # ...y lo que esta en cocina manda
+        ocupacion[p.mesa_id] = p.estado
     mesas = [{
         "id": m.id, "numero": m.numero, "capacidad": m.capacidad,
-        "ocupada": m.id in por_mesa,
-        "estado": por_mesa[m.id].estado if m.id in por_mesa else "libre",
+        "ocupada": m.id in ocupacion, "estado": ocupacion.get(m.id, "libre"),
     } for m in Mesa.query.order_by(Mesa.numero).all()]
 
-    propios = [p for p in activos if p.mozo_id == mozo.id]
+    es_admin = mozo.rol == "admin"
+    propios = [p for p in activos if es_admin or p.mozo_id == mozo.id]
     orden = {"listo": 0, "pendiente": 1, "en_preparacion": 2}
     propios.sort(key=lambda p: (orden.get(p.estado, 9), p.creado_en))
-    return {"mesas": mesas, "pedidos": [pedido_a_dict(p, ahora) for p in propios]}
+    cobrar = [p for p in por_cobrar_todos if es_admin or p.mozo_id == mozo.id]
+    return {"mesas": mesas, "pedidos": [pedido_a_dict(p, ahora) for p in propios],
+            "por_cobrar": [pedido_a_dict(p, ahora) for p in cobrar],
+            "avisos": servicio_avisos.avisos_pendientes(mozo, ahora)}
+
+
+# ---------------------------------------------------------------- agregar platos / cancelar
+def agregar_items(pedido: Pedido, items: list[dict], ahora: datetime | None = None) -> Pedido:
+    """Suma platos a un pedido que la cocina aun no termino; recalcula el total y el inventario."""
+    if pedido.estado not in (EstadoPedido.PENDIENTE.value, EstadoPedido.EN_PREPARACION.value):
+        raise ErrorPedido("Solo se pueden agregar platos mientras el pedido no esté listo")
+    lineas = _lineas_validadas(items)
+    try:
+        for plato, cantidad, _ in lineas:
+            validar_stock(plato, cantidad)
+        existentes = {i.plato_id: i for i in pedido.items}
+        for plato, cantidad, nota in lineas:
+            if plato.id in existentes:
+                item = existentes[plato.id]
+                item.cantidad += cantidad
+                if nota:
+                    item.notas = f"{item.notas or ''} {nota}".strip()[:255]
+            else:
+                nuevo = ItemPedido(plato=plato, cantidad=cantidad, precio_unitario=plato.precio, notas=nota)
+                pedido.items.append(nuevo)
+                existentes[plato.id] = nuevo
+            descontar_stock(plato, cantidad)
+        d = calcular_total([Linea(i.precio_unitario, i.cantidad) for i in pedido.items],
+                           hora=pedido.creado_en.hour, comensales=pedido.comensales)
+        pedido.subtotal, pedido.descuento, pedido.total = d.subtotal, d.descuento, d.total
+        db.session.commit()
+        return pedido
+    except ErrorInventario as error:
+        db.session.rollback()
+        raise ErrorPedido(str(error))
+    except Exception:
+        db.session.rollback()
+        raise
+
+
+def reponer_inventario(pedido: Pedido) -> None:
+    """Un pedido cancelado devuelve al inventario los ingredientes que se habian descontado."""
+    for item in pedido.items:
+        reponer_stock(item.plato, item.cantidad)

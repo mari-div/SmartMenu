@@ -9,7 +9,7 @@ from analisis import metricas
 from analisis.datos import cargar_ventas
 from analisis.limpieza import limpiar_ventas
 from app.extensions import db
-from app.models import Ingrediente, Pedido, Plato
+from app.models import Aviso, Ingrediente, Pedido, Plato
 
 MINUTOS_DEMORA = 20            # un pedido pendiente/en preparacion mas de esto se marca "demorado"
 
@@ -48,6 +48,8 @@ def estado_en_vivo(ahora: datetime | None = None) -> dict:
         "pendientes": sum(p.estado == "pendiente" for p in activos),
         "en_preparacion": sum(p.estado == "en_preparacion" for p in activos),
         "listos": sum(p.estado == "listo" for p in activos),
+        "por_cobrar": Pedido.query.filter(Pedido.estado == "entregado", Pedido.pagado_en.is_(None)).count(),
+        "avisos_pendientes": Aviso.query.filter(Aviso.atendido_en.is_(None)).count(),
         "demorados": [{"id": p.id, "mesa": p.mesa.numero, "estado": p.estado,
                        "minutos": round((ahora - p.creado_en).total_seconds() / 60)}
                       for p in demorados],
@@ -98,7 +100,18 @@ def resumen(dias: int = 30, ahora: datetime | None = None) -> dict:
         "var_ingresos": _variacion(ingresos, kp.get("ingresos", 0)),
         "var_pedidos": _variacion(k["pedidos"], kp.get("pedidos", 0)),
         "var_ticket": _variacion(k["ticket_promedio"], kp.get("ticket_promedio", 0)),
+        "propinas": round(float(ped["propina"].fillna(0).sum()), 2),
+        "satisfaccion": round(float(ped["calificacion"].mean()), 2) if ped["calificacion"].notna().any() else None,
+        "calificaciones_n": int(ped["calificacion"].notna().sum()),
     }
+
+    pagos = (ped.dropna(subset=["metodo_pago"]).groupby("metodo_pago")
+             .agg(pedidos=("pedido_id", "count"), ingresos=("total_pedido", "sum"))
+             .sort_values("ingresos", ascending=False).round(2).reset_index())
+    califs = (ped["calificacion"].dropna().astype(int).value_counts()
+              .reindex(range(1, 6), fill_value=0).rename("cantidad").rename_axis("estrellas").reset_index())
+    comentarios = (ped.dropna(subset=["comentario_cliente"]).sort_values("creado_en", ascending=False)
+                   .head(6)[["calificacion", "comentario_cliente", "mesa_id", "creado_en"]])
 
     diarias = metricas.ventas_diarias(actual)
     diarias["fecha"] = pd.to_datetime(diarias["fecha"]).dt.strftime("%Y-%m-%d")
@@ -125,7 +138,37 @@ def resumen(dias: int = 30, ahora: datetime | None = None) -> dict:
             "categorias": _registros(por_cat.round(2)),
             "mozos": _registros(por_mozo),
             "tiempos": _registros(metricas.tiempos_por_hora(actual).round(2)),
+            "pagos": _registros(pagos),
+            "calificaciones": _registros(califs),
+            "comentarios": _registros(comentarios),
             "calor": {"horas": horas, "dias": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
                       "valores": matriz.tolist()},
         },
     }
+
+
+# ---------------------------------------------------------------- exportacion
+def exportar_csv(tipo: str, dias: int = 30, ahora: datetime | None = None) -> str:
+    """CSV (listo para Excel) con las ventas o los pedidos del periodo. `tipo`: 'ventas' | 'pedidos'."""
+    ahora = ahora or datetime.now()
+    limpio, _ = cargar_limpio()
+    if limpio is None:
+        return ""
+    periodo = _periodo(limpio, ahora - timedelta(days=max(1, dias)), ahora + timedelta(days=1))
+    if tipo == "pedidos":
+        df = metricas.pedidos_unicos(periodo)[[
+            "pedido_id", "creado_en", "mesa_id", "mozo", "comensales", "subtotal_pedido", "descuento_pedido",
+            "total_pedido", "propina", "metodo_pago", "espera_cocina_min", "prep_real_min", "calificacion"]]
+        df = df.rename(columns={"pedido_id": "pedido", "creado_en": "fecha", "mesa_id": "mesa",
+                                "subtotal_pedido": "subtotal_s", "descuento_pedido": "descuento_s",
+                                "total_pedido": "total_s", "propina": "propina_s",
+                                "espera_cocina_min": "espera_cocina_min", "prep_real_min": "preparacion_min"})
+    else:
+        df = periodo[["pedido_id", "creado_en", "mozo", "categoria", "plato", "cantidad", "precio_unitario",
+                      "ingreso_linea", "margen_linea"]].rename(columns={
+            "pedido_id": "pedido", "creado_en": "fecha", "precio_unitario": "precio_s",
+            "ingreso_linea": "ingreso_s", "margen_linea": "margen_s"})
+    df = df.copy()
+    numericas = df.select_dtypes("number").columns
+    df[numericas] = df[numericas].round(2)
+    return df.to_csv(index=False)

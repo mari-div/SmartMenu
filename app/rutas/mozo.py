@@ -36,7 +36,13 @@ def tomar_pedido(mesa_id: int):
 
     # ?parcial=1 devuelve solo la lista de platos (el JS filtra sin recargar la pagina)
     plantilla = "_secciones.html" if request.args.get("parcial") else "carta.html"
-    return render_template(plantilla, mesa=mesa, secciones=secciones,
+    # ?pedido=<id>: se estan AGREGANDO platos a un pedido que la cocina aun no termino
+    destino = None
+    if request.args.get("pedido", "").isdigit():
+        destino = db.session.get(Pedido, int(request.args["pedido"]))
+        if destino is None or destino.mesa_id != mesa.id or destino.estado not in ("pendiente", "en_preparacion"):
+            destino = None
+    return render_template(plantilla, mesa=mesa, secciones=secciones, pedido_destino=destino,
                            filtros=ETIQUETAS_FILTRO, dietas_activas=dietas)
 
 

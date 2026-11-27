@@ -38,6 +38,22 @@ def registrar_comandos(app):
         n = generar_historial(dias=dias, semilla=semilla)
         click.echo(f"Pedidos simulados: {n}")
 
+    @app.cli.command("preparar-demo")
+    @click.option("--dias", default=45, show_default=True, help="Dias de historial simulado")
+    @click.confirmation_option(prompt="Esto BORRA todos los datos y deja una demostración lista. ¿Continuar?")
+    def preparar_demo(dias):
+        """Todo en uno para la exposicion: reinicia la base, siembra y simula el historial."""
+        from analisis.generador import generar_historial
+        from app.seed import sembrar_menu, sembrar_mesas, sembrar_usuarios
+        db.drop_all()
+        db.create_all()
+        sembrar_menu()
+        sembrar_mesas(10)
+        sembrar_usuarios()
+        n = generar_historial(dias=dias)
+        click.echo(f"Listo: menú, 10 mesas, usuarios y {n} pedidos simulados.")
+        click.echo("Usuarios: admin/admin123 · mozo1/mozo123 · cocina1/cocina123")
+
     @app.cli.command("reporte")
     def reporte():
         """Imprime el analisis y guarda los graficos en docs/graficos."""

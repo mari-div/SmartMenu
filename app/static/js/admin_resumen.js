@@ -27,6 +27,8 @@
     { k: "margen_pct", nombre: "Margen bruto", icono: "trend", fmt: (n) => n.toFixed(1) + "%", sub: (d) => soles0(d.margen_bruto) + " de utilidad" },
     { k: "cancelados_pct", nombre: "Cancelaciones", icono: "x", fmt: (n) => n.toFixed(1) + "%", sub: (d) => `${d.cancelados} pedidos`, malo: true },
     { k: "espera_cocina_min", nombre: "Espera en cocina", icono: "clock", fmt: (n) => n.toFixed(1) + " min" },
+    { k: "propinas", nombre: "Propinas", icono: "cash", fmt: soles0, sub: () => "cobradas en el periodo" },
+    { k: "satisfaccion", nombre: "Satisfacción", icono: "star", fmt: (n) => (n ? n.toFixed(1) + " / 5" : "—"), sub: (d) => `${d.calificaciones_n} calificaciones` },
     { k: "prep_min", nombre: "Preparación", icono: "timer", fmt: (n) => n.toFixed(1) + " min", sub: (d) => `${d.comensales_prom} comensales por pedido` },
   ];
 
@@ -40,7 +42,7 @@
         el("span", { class: "kpi-ico" }, icono(d.icono)),
         el("span", { class: "kpi-nombre" }, d.nombre), valor, delta,
         d.sub ? el("small", { class: "kpi-sub" }, d.sub(k)) : null);
-      SM.contar(valor, k[d.k], d.fmt, 900);
+      SM.contar(valor, k[d.k] ?? 0, d.fmt, 900);
       return tarjeta;
     }));
   }
@@ -112,6 +114,19 @@
       options: { ...base, interaction: { mode: "index", intersect: false }, scales: ejes(c, "Minutos"),
         plugins: { legend: { labels: { color: c.texto, usePointStyle: true } } } } });
 
+    const NOMBRES_PAGO = { efectivo: "Efectivo", tarjeta: "Tarjeta", yape: "Yape", plin: "Plin" };
+    crear("g-pagos", { type: "doughnut", data: {
+      labels: s.pagos.map((d) => NOMBRES_PAGO[d.metodo_pago] || d.metodo_pago),
+      datasets: [{ data: s.pagos.map((d) => d.ingresos), backgroundColor: c.serie, borderColor: c.fondo, borderWidth: 3 }] },
+      options: { ...base, cutout: "62%", plugins: { legend: { position: "bottom", labels: { color: c.texto, usePointStyle: true } },
+        tooltip: { callbacks: { label: (x) => `${x.label}: ${soles0(x.parsed)} (${s.pagos[x.dataIndex].pedidos} pedidos)` } } } } });
+
+    crear("g-calif", { type: "bar", data: {
+      labels: s.calificaciones.map((d) => "★".repeat(d.estrellas)),
+      datasets: [{ label: "Calificaciones", data: s.calificaciones.map((d) => d.cantidad), borderRadius: 6,
+        backgroundColor: s.calificaciones.map((d) => (d.estrellas >= 4 ? c.verde : d.estrellas === 3 ? c.dorado : c.rojo)) }] },
+      options: { ...base, scales: ejes(c), plugins: { legend: { display: false } } } });
+
     crear("g-dias", { type: "bar", data: {
       labels: s.dias_semana.map((d) => d.nombre_dia),
       datasets: [{ label: "Ingreso promedio", data: s.dias_semana.map((d) => d.ingreso_prom_dia), backgroundColor: c.serie[2], borderRadius: 6 }] },
@@ -148,7 +163,18 @@
     $("alertas-admin").replaceChildren(...bloques);
   }
 
+  function pintarComentarios(lista) {
+    $("comentarios").replaceChildren(...(lista.length ? lista.map((c) => el("div", { class: "comentario" },
+      el("span", { class: "comentario-estrellas", "aria-label": `${c.calificacion} estrellas` }, "★".repeat(c.calificacion) + "☆".repeat(5 - c.calificacion)),
+      el("p", {}, `“${c.comentario_cliente}”`),
+      el("small", { class: "muted" }, `Mesa ${c.mesa_id} · ${String(c.creado_en).slice(0, 10)}`)))
+      : [el("p", { class: "vacio-mini" }, "Todavía no hay comentarios en este periodo.")]));
+  }
+
   function pintarVivo(v) {
+    $("v-cobrar").textContent = v.por_cobrar;
+    $("v-avisos-wrap").hidden = v.avisos_pendientes === 0;
+    $("v-avisos").textContent = v.avisos_pendientes;
     $("v-activos").textContent = v.activos; $("v-pendientes").textContent = v.pendientes;
     $("v-prep").textContent = v.en_preparacion; $("v-listos").textContent = v.listos;
     $("v-demorados-wrap").hidden = v.demorados.length === 0;
@@ -180,12 +206,15 @@
     pintarGraficos(datos.series);
     pintarCalor(datos.series.calor);
     pintarAlertas(datos.vivo);
+    pintarComentarios(datos.series.comentarios);
     pintarTabla(datos.series.top_platos);
   }
 
   document.querySelectorAll(".selector-rango button").forEach((b) => b.addEventListener("click", () => {
     document.querySelectorAll(".selector-rango button").forEach((x) => x.classList.toggle("activo", x === b));
     dias = Number(b.dataset.dias);
+    $("exp-ventas").href = `/admin/export/ventas.csv?dias=${dias}`;
+    $("exp-pedidos").href = `/admin/export/pedidos.csv?dias=${dias}`;
     cargar();
   }));
   SM.alCambiarTema(() => { if (datos && !datos.vacio) pintarGraficos(datos.series); });

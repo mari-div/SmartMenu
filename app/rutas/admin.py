@@ -1,5 +1,6 @@
 """Panel de administracion: KPIs, ventas, pedidos, menu, usuarios y bitacora."""
 import re
+from datetime import datetime
 
 from flask import Blueprint, Response, abort, jsonify, render_template, request
 
@@ -190,6 +191,24 @@ def logs():
     return render_template("admin/logs.html", seccion="logs", filas=filas, acciones=acciones,
                            accion=accion, q=q, pagina=pagina, total=total,
                            paginas=max(1, -(-total // 50)))
+
+
+# ---------------------------------------------------------------- exportar a CSV (Excel)
+@bp.get("/export/<tipo>.csv")
+@SOLO_ADMIN
+def exportar(tipo: str):
+    if tipo not in ("ventas", "pedidos"):
+        abort(404)
+    try:
+        dias = min(max(int(request.args.get("dias", 30)), 1), 3650)
+    except ValueError:
+        return jsonify(error="'dias' debe ser un número"), 400
+    contenido = servicio.exportar_csv(tipo, dias)
+    registrar("EXPORTACION", f"{tipo}.csv · últimos {dias} días")
+    nombre = f"smartmenu_{tipo}_{dias}d_{datetime.now():%Y%m%d}.csv"
+    # utf-8-sig: Excel abre bien las tildes y la ñ
+    return Response("\ufeff" + contenido, mimetype="text/csv",
+                    headers={"Content-Disposition": f"attachment; filename={nombre}"})
 
 
 # ---------------------------------------------------------------- analisis avanzado (matplotlib)

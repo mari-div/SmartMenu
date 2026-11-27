@@ -195,3 +195,53 @@ td.vacio-mini { border: 0; }
 .limpieza b { font-variant-numeric: tabular-nums; }
 .grafico.grande { grid-column: 1 / -1; }
 @media (max-width: 640px) { .nav { display: flex; } .tabla-edit .in-url { min-width: 0; } }
+
+/* ---------- sugerencias, cobro, avisos, calificacion ---------- */
+.sugerencias { margin: .2rem 0 1rem; padding: .8rem; background: var(--gold-soft); border-radius: var(--r-sm); animation: pop .4s var(--ease-back); }
+.sug-titulo { display: flex; align-items: center; gap: .4rem; font-weight: 800; color: var(--gold); margin-bottom: .5rem; font-size: .92rem; }
+.sug-lista { display: grid; gap: .4rem; }
+.sug-item { display: flex; align-items: center; gap: .5rem; min-height: 44px; padding: .4rem .7rem; border: 1.5px dashed var(--gold); border-radius: 10px; background: var(--surface); color: var(--text); text-align: left; transition: all .2s var(--ease); }
+.sug-item span { flex: 1; font-weight: 700; } .sug-item b { color: var(--primary-text); }
+.sug-item:hover { border-style: solid; background: var(--surface-2); transform: translateX(3px); }
+
+.cobro-lista { display: grid; gap: .7rem; margin-top: .8rem; }
+.cobro-card { display: grid; gap: .5rem; padding: .9rem 1rem; background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--gold); border-radius: var(--r); animation: subir .4s var(--ease) both; }
+.cobro-cab { display: flex; justify-content: space-between; align-items: center; }
+.cobro-form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.cobro-form select { min-height: 44px; padding: 0 .7rem; border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; }
+.avisos-cliente { margin-bottom: 1.6rem; padding: 1rem; border-radius: var(--r-lg); background: var(--warn-soft); border: 2px solid var(--warn); animation: pop .5s var(--ease-back); }
+.avisos-cliente h2 { display: flex; align-items: center; gap: .5rem; color: var(--warn); font-size: 1.2rem; margin-bottom: .6rem; }
+.aviso-fila { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .6rem .8rem; background: var(--surface); border-radius: var(--r-sm); margin-top: .5rem; flex-wrap: wrap; }
+.mesa-btn.est-por_cobrar { border-color: var(--gold); background: var(--gold-soft); }
+.mesa-btn.est-por_cobrar .mesa-btn-est { background: var(--gold); color: #1f1300; }
+.b-por_cobrar { background: var(--gold-soft); color: var(--gold); }
+
+.cliente-acciones { display: grid; gap: .8rem; }
+.cliente-acciones .fila-botones { display: flex; flex-wrap: wrap; gap: .6rem; }
+.cliente-acciones .btn[aria-disabled="true"] { opacity: .55; pointer-events: none; }
+.cuenta-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.2rem 1.4rem; box-shadow: var(--shadow-sm); display: grid; gap: .8rem; }
+.cuenta-card h2 { display: flex; align-items: center; gap: .5rem; font-size: 1.15rem; }
+.chips-propina { display: flex; flex-wrap: wrap; gap: .4rem; }
+.partes { display: grid; gap: .3rem; }
+.partes .fila b { font-family: var(--font-title); }
+.estrellas { display: flex; gap: .3rem; justify-content: center; }
+.estrella { width: 52px; height: 52px; border: 0; background: transparent; color: var(--border); transition: transform .2s var(--ease-back), color .2s; }
+.estrella .ico { width: 100%; height: 100%; fill: currentColor; stroke: currentColor; }
+.estrella.on { color: var(--gold); } .estrella:hover { transform: scale(1.15); }
+.cuenta-card textarea { width: 100%; padding: .65rem .8rem; border: 1.5px solid var(--border); border-radius: var(--r-sm); background: var(--bg); color: var(--text); font: inherit; resize: vertical; }
+.gracias { text-align: center; color: var(--green); font-weight: 800; }
+
+/* ---------- admin: exportar y comentarios ---------- */
+.exportar { display: flex; gap: .5rem; flex-wrap: wrap; }
+.comentarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .8rem; }
+.comentario { padding: .9rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); display: grid; gap: .3rem; }
+.comentario-estrellas { color: var(--gold); letter-spacing: 2px; font-size: 1.1rem; }
+
+/* tira flotante de sugerencias (solo celular) */
+.sug-movil { display: none; }
+@media (max-width: 900px) {
+  .sug-movil { display: flex; gap: .5rem; position: fixed; z-index: 49; left: 12px; right: 12px; bottom: calc(82px + env(safe-area-inset-bottom)); overflow-x: auto; padding: .3rem .1rem; scrollbar-width: none; animation: subir-barra .4s var(--ease-back); }
+  .sug-movil[hidden] { display: none; }
+  .sug-movil::-webkit-scrollbar { display: none; }
+  .sug-movil .sug-item { flex: none; border-radius: 999px; background: var(--surface); border-style: solid; box-shadow: var(--shadow); padding: .4rem .9rem; }
+}

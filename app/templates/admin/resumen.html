@@ -12,6 +12,10 @@
     <button type="button" data-dias="30" class="activo">30 días</button>
     <button type="button" data-dias="3650">Todo</button>
   </div>
+  <div class="exportar" role="group" aria-label="Exportar datos">
+    <a class="btn btn-ghost btn-sm" id="exp-ventas" href="/admin/export/ventas.csv?dias=30"><svg class="ico"><use href="#i-download"/></svg> Ventas CSV</a>
+    <a class="btn btn-ghost btn-sm" id="exp-pedidos" href="/admin/export/pedidos.csv?dias=30"><svg class="ico"><use href="#i-download"/></svg> Pedidos CSV</a>
+  </div>
 </div>
 
 <section class="vivo-strip" id="vivo" aria-label="Estado en vivo">
@@ -20,6 +24,8 @@
   <div class="vivo-item"><span>Pendientes</span><b id="v-pendientes">–</b></div>
   <div class="vivo-item"><span>Cocinando</span><b id="v-prep">–</b></div>
   <div class="vivo-item"><span>Listos sin entregar</span><b id="v-listos">–</b></div>
+  <div class="vivo-item"><span>Por cobrar</span><b id="v-cobrar">–</b></div>
+  <div class="vivo-item alerta-item" id="v-avisos-wrap" hidden><span>Clientes llaman</span><b id="v-avisos">0</b></div>
   <div class="vivo-item alerta-item" id="v-demorados-wrap" hidden><span>Demorados</span><b id="v-demorados">0</b></div>
 </section>
 
@@ -40,10 +46,15 @@
     <figure class="graf"><figcaption>Rendimiento por mozo <small>(S/)</small></figcaption><div class="graf-lienzo"><canvas id="g-mozos" role="img" aria-label="Ingresos por mozo"></canvas></div></figure>
     <figure class="graf"><figcaption>Tiempos de cocina por hora <small>(min)</small></figcaption><div class="graf-lienzo"><canvas id="g-tiempos" role="img" aria-label="Espera y preparación por hora"></canvas></div></figure>
     <figure class="graf"><figcaption>Ingreso promedio por día de la semana <small>(S/)</small></figcaption><div class="graf-lienzo"><canvas id="g-dias" role="img" aria-label="Ingreso promedio por día de la semana"></canvas></div></figure>
+    <figure class="graf"><figcaption>Métodos de pago <small>(ingresos)</small></figcaption><div class="graf-lienzo"><canvas id="g-pagos" role="img" aria-label="Ingresos por método de pago"></canvas></div></figure>
+    <figure class="graf"><figcaption>Calificaciones de los clientes</figcaption><div class="graf-lienzo"><canvas id="g-calif" role="img" aria-label="Cantidad de calificaciones por estrellas"></canvas></div></figure>
     <figure class="graf graf-2"><figcaption>Mapa de calor: ¿cuándo se llena el local? <small>(pedidos)</small></figcaption><div class="calor" id="calor"></div></figure>
   </div>
 
   <div class="alertas-admin" id="alertas-admin"></div>
+
+  <h2 class="subtitulo">Lo que dicen los clientes</h2>
+  <div class="comentarios" id="comentarios"></div>
 
   <h2 class="subtitulo">Top platos: ventas y margen</h2>
   <div class="tabla-wrap"><table class="tabla" id="tabla-top">

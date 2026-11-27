@@ -7,7 +7,8 @@
   const aside = $("carrito");
     const menu = $("menu");
   const mesaId = Number(aside.dataset.mesaId);
-  const claveCarrito = "sm-carrito-mesa-" + mesaId;
+  const pedidoId = aside.dataset.pedidoId ? Number(aside.dataset.pedidoId) : null;   // modo "agregar a un pedido"
+  const claveCarrito = "sm-carrito-mesa-" + mesaId + (pedidoId ? "-pedido-" + pedidoId : "");
 
   // ---------------------------------------------------------------- estado
   let carrito = new Map();                                // id -> {id, nombre, precio, cantidad}
@@ -42,6 +43,32 @@
     else carrito.set(id, { id: Number(id), nombre: card.dataset.nombre, precio: Number(card.dataset.precio), cantidad: nueva });
     guardar();
     actualizar();
+    if (delta > 0) sugerir(Number(id));
+  }
+
+  // ---------------------------------------------------------------- "Te puede gustar" (recomendador)
+  let ultimaSugerencia = 0;
+  async function sugerir(platoId) {
+    const mio = ++ultimaSugerencia;
+    try {
+      const r = await fetch(`/api/sugerencias/${platoId}?excluir=${[...carrito.keys()].join(",")}${pedidoId ? "&pedido=" + pedidoId : ""}`);
+      if (!r.ok || mio !== ultimaSugerencia) return;
+      const lista = await r.json();
+      const crearBoton = (p) => {
+        const b = el("button", { type: "button", class: "sug-item" }, icono("plus"),
+          el("span", {}, p.nombre), el("b", {}, dinero(p.precio)));
+        b.addEventListener("click", () => {
+          const card = menu.querySelector(`.plato[data-id="${p.id}"]`);
+          if (card) cambiar(card, 1); else toast("Quita los filtros para agregar ese plato", "info");
+        });
+        return b;
+      };
+      const hay = lista.length > 0 && carrito.size > 0;
+      $("sug-lista").replaceChildren(...lista.map(crearBoton));        // dentro del panel del pedido
+      $("sug-movil").replaceChildren(...lista.map(crearBoton));        // tira flotante en el celular
+      $("sugerencias").hidden = !hay;
+      $("sug-movil").hidden = !hay || aside.classList.contains("abierto");
+    } catch (_) { /* las sugerencias son opcionales */ }
   }
 
   menu.addEventListener("click", (e) => {
@@ -103,7 +130,7 @@
       barra.classList.remove("bump"); void barra.offsetWidth; barra.classList.add("bump");
     }
     ultimoN = n;
-    if (n === 0) cerrarPanel();
+    if (n === 0) { cerrarPanel(); $("sugerencias").hidden = true; $("sug-movil").hidden = true; }
     cotizar();
   }
 
@@ -113,10 +140,12 @@
     if (!movil.matches) return;
     aside.classList.add("abierto"); aside.inert = false;
     $("velo").hidden = false; $("barra-carrito").setAttribute("aria-expanded", "true");
+    $("sug-movil").hidden = true;                      // dentro de la hoja ya se ven las sugerencias
     document.body.style.overflow = "hidden";
   }
   function cerrarPanel() {
     aside.classList.remove("abierto"); $("velo").hidden = true;
+    $("sug-movil").hidden = $("sug-lista").children.length === 0 || carrito.size === 0;
     $("barra-carrito").setAttribute("aria-expanded", "false");
     document.body.style.overflow = "";
     aside.inert = movil.matches;                       // fuera de pantalla: no enfocable
@@ -182,16 +211,17 @@
     boton.disabled = true; boton.classList.add("enviando");
     $("error").hidden = true;
     try {
-      const r = await fetch("/api/pedidos", {
+      const r = await fetch(pedidoId ? `/api/pedidos/${pedidoId}/items` : "/api/pedidos", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mesa_id: mesaId, items: items(), comensales: comensales(), notas: $("notas").value }),
+        body: JSON.stringify(pedidoId ? { items: items() }
+          : { mesa_id: mesaId, items: items(), comensales: comensales(), notas: $("notas").value }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || "No se pudo enviar el pedido");
       try { sessionStorage.removeItem(claveCarrito); } catch (_) {}
       boton.classList.remove("enviando"); boton.classList.add("ok");
-      boton.querySelector(".btn-texto").textContent = "¡Pedido enviado!";
-      toast("Pedido enviado a cocina", "ok");
+      boton.querySelector(".btn-texto").textContent = pedidoId ? "¡Agregado!" : "¡Pedido enviado!";
+      toast(pedidoId ? "Platos agregados al pedido" : "Pedido enviado a cocina", "ok");
       setTimeout(() => { location.href = "/mozo/pedido/" + d.id; }, reducido ? 0 : 700);
     } catch (e) {
       boton.classList.remove("enviando"); boton.disabled = false;

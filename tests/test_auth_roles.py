@@ -1,6 +1,7 @@
 """Login, roles, permisos y bitacora."""
 import pytest
 
+from app.extensions import db
 from app.funcional.permisos import puede_cambiar_estado, ruta_inicio
 from app.models import Auditoria, Mesa, Pedido, Plato, Usuario
 
@@ -121,7 +122,7 @@ def test_la_bitacora_registra_login_pedido_y_cambios(entrar):
     cocina.post(f"/api/pedidos/{pid}/avanzar")
     acciones = [a.accion for a in Auditoria.query.order_by(Auditoria.id)]
     assert acciones.count("LOGIN") == 2 and "PEDIDO_CREADO" in acciones and "PEDIDO_ESTADO" in acciones
-    assert Pedido.query.get(pid).mozo.username == "mozo1"          # el pedido guarda quien lo tomo
+    assert db.session.get(Pedido, pid).mozo.username == "mozo1"          # el pedido guarda quien lo tomo
 
 
 def test_mozo_puede_cancelar_solo_pendientes(entrar):

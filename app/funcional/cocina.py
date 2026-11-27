@@ -62,3 +62,20 @@ def estimar_minutos_entrega(tiempos_por_delante: Iterable[float], tiempo_propio:
     """
     carga = sum(tiempos_por_delante)
     return round(carga / max(1, estaciones) + tiempo_propio, 1)
+
+
+# ---------------------------------------------------------------- tiempos aprendidos del historial
+def factor_ajuste(razones: Sequence[float], minimo_muestras: int = 15,
+                  piso: float = 0.6, techo: float = 2.0) -> float:
+    """Cuanto se demora la cocina respecto a lo estimado, segun el historial.
+
+    `razones` = tiempo real / tiempo estimado de pedidos pasados (misma hora del dia).
+    Se usa la MEDIANA (no se deja enganar por un pedido raro) y se limita entre `piso`
+    y `techo`.  Con pocas muestras no se arriesga: devuelve 1.0 (sin ajuste).
+    """
+    validas = sorted(r for r in razones if r > 0)
+    if len(validas) < minimo_muestras:
+        return 1.0
+    n = len(validas)
+    mediana = validas[n // 2] if n % 2 else (validas[n // 2 - 1] + validas[n // 2]) / 2
+    return round(min(techo, max(piso, mediana)), 3)
